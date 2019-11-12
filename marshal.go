@@ -15,33 +15,50 @@ func Marshall(v interface{}) ([]byte, error) {
 	val := reflect.Indirect(reflect.ValueOf(v))
 	valType := val.Type()
 
-	for i := 0; i < val.NumField(); i++ {
-		value := val.Field(i)
-		field := valType.Field(i)
-		kind := field.Type.Kind()
-		tags := field.Tag
-
-		endianness := tagEndianness(tags)
-
-		switch kind {
-		case reflect.Uint8:
-			bb.WriteByte(uint8(value.Uint()))
-		case reflect.Uint16:
-			writeUint(&bb, endianness, 2, value.Uint())
-		case reflect.Uint32:
-			writeUint(&bb, endianness, 4, value.Uint())
-		case reflect.Uint64:
-			writeUint(&bb, endianness, 8, value.Uint())
-
-		default:
-			return nil, fmt.Errorf("%w: field '%s' of type '%v'", UnsupportedType, val.Type().Field(i).Name, kind)
-		}
+	if err := marshalStruct(&bb, val, valType); err != nil {
+		return nil, err
 	}
 
 	return bb.Bytes(), nil
 }
 
-func writeUint(bb *bytes.Buffer, endian Endian, size uint8, value uint64) {
+func marshalStruct(bb *bytes.Buffer, v reflect.Value, t reflect.Type) error {
+	for i := 0; i < v.NumField(); i++ {
+		value := v.Field(i)
+		field := t.Field(i)
+		kind := field.Type.Kind()
+		tags := field.Tag
+		name := field.Name
+
+		endianness := tagEndianness(tags)
+
+		if err := marshalValue(bb, name, value, kind, endianness); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func marshalValue(bb *bytes.Buffer, n string, v reflect.Value, k reflect.Kind, e Endian) error {
+	switch k {
+	case reflect.Uint8:
+		marshallUint(bb, e, 1, v.Uint())
+	case reflect.Uint16:
+		marshallUint(bb, e, 2, v.Uint())
+	case reflect.Uint32:
+		marshallUint(bb, e, 4, v.Uint())
+	case reflect.Uint64:
+		marshallUint(bb, e, 8, v.Uint())
+
+	default:
+		return fmt.Errorf("%w: field '%s' of type '%v'", UnsupportedType, n, k)
+	}
+
+	return nil
+}
+
+func marshallUint(bb *bytes.Buffer, endian Endian, size uint8, value uint64) {
 	switch endian {
 	case BigEndian:
 		for i := uint8(0); i < size; i++ {
