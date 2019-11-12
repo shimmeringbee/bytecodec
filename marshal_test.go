@@ -152,7 +152,7 @@ func TestMarshal(t *testing.T) {
 		assert.Equal(t, "unsupported type: field 'Three' of type 'chan'", err.Error())
 	})
 
-	t.Run("verify marshal of non struct is little endian", func(t *testing.T) {
+	t.Run("verify the marshal of non struct is little endian", func(t *testing.T) {
 		instance := uint32(0x80010203)
 
 		actualBytes, err := Marshall(instance)
@@ -160,5 +160,46 @@ func TestMarshal(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedBytes, actualBytes)
+	})
+
+	t.Run("verify a slice of bytes marshals", func(t *testing.T) {
+		type StructUnderTest struct {
+			One []byte
+		}
+
+		instance := &StructUnderTest{One: []byte{0x55, 0xaa}}
+		actualBytes, err := Marshall(instance)
+
+		expectedBytes := []byte{0x55, 0xaa}
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedBytes, actualBytes)
+	})
+
+	t.Run("verify an array of bytes marshals", func(t *testing.T) {
+		type StructUnderTest struct {
+			One [2]byte
+		}
+
+		instance := &StructUnderTest{One: [2]byte{0x55, 0xaa}}
+		actualBytes, err := Marshall(instance)
+
+		expectedBytes := []byte{0x55, 0xaa}
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedBytes, actualBytes)
+	})
+
+	t.Run("verify an array with unmarshalable type errors", func(t *testing.T) {
+		type StructUnderTest struct {
+			One [2]chan bool
+		}
+
+		instance := &StructUnderTest{}
+		_, err := Marshall(instance)
+
+		assert.Error(t, err)
+		assert.True(t, errors.Is(err, UnsupportedType))
+		assert.Equal(t, "unsupported type: field 'array[0]' of type 'chan'", err.Error())
 	})
 }
