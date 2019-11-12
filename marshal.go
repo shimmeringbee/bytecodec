@@ -55,7 +55,7 @@ func marshalValue(bb *bytes.Buffer, name string, value reflect.Value, endian End
 	case reflect.Struct:
 		err = marshalStruct(bb, value)
 	case reflect.Array, reflect.Slice:
-		err = marshallArrayOrSlice(bb, value)
+		err = marshallArrayOrSlice(bb, value, endian)
 	default:
 		err = fmt.Errorf("%w: field '%s' of type '%v'", UnsupportedType, name, kind)
 	}
@@ -63,10 +63,10 @@ func marshalValue(bb *bytes.Buffer, name string, value reflect.Value, endian End
 	return
 }
 
-func marshallArrayOrSlice(bb *bytes.Buffer, value reflect.Value) error {
+func marshallArrayOrSlice(bb *bytes.Buffer, value reflect.Value, endian Endian) error {
 	for i := 0; i < value.Len(); i++ {
 		name := fmt.Sprintf("array[%d]", i)
-		if err := marshalValue(bb, name, value.Index(i), LittleEndian); err != nil {
+		if err := marshalValue(bb, name, value.Index(i), endian); err != nil {
 			return err
 		}
 	}

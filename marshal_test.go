@@ -202,4 +202,18 @@ func TestMarshal(t *testing.T) {
 		assert.True(t, errors.Is(err, UnsupportedType))
 		assert.Equal(t, "unsupported type: field 'array[0]' of type 'chan'", err.Error())
 	})
+
+	t.Run("verify a slice of uint16s obeys big endian annotation", func(t *testing.T) {
+		type StructUnderTest struct {
+			One []uint16 `bcendian:"big"`
+		}
+
+		instance := &StructUnderTest{One: []uint16{0x8001}}
+		actualBytes, err := Marshall(instance)
+
+		expectedBytes := []byte{0x80, 0x01}
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedBytes, actualBytes)
+	})
 }
