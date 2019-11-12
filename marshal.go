@@ -14,7 +14,7 @@ func Marshall(v interface{}) ([]byte, error) {
 
 	val := reflect.Indirect(reflect.ValueOf(v))
 
-	if err := marshalStruct(&bb, val); err != nil {
+	if err := marshalValue(&bb, "root", val, val.Kind(), LittleEndian); err != nil {
 		return nil, err
 	}
 

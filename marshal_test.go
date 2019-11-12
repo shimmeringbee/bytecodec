@@ -151,4 +151,14 @@ func TestMarshal(t *testing.T) {
 		assert.True(t, errors.Is(err, UnsupportedType))
 		assert.Equal(t, "unsupported type: field 'Three' of type 'chan'", err.Error())
 	})
+
+	t.Run("verify marshal of non struct is little endian", func(t *testing.T) {
+		instance := uint32(0x80010203)
+
+		actualBytes, err := Marshall(instance)
+		expectedBytes := []byte{0x03, 0x02, 0x01, 0x80}
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedBytes, actualBytes)
+	})
 }
