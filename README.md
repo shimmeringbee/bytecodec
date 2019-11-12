@@ -4,7 +4,7 @@
 [![standard-readme compliant](https://img.shields.io/badge/standard--readme-OK-green.svg)](https://github.com/RichardLitt/standard-readme)
 [![Actions Status](https://github.com/shimmeringbee/bytecodec/workflows/test/badge.svg)](https://github.com/shimmeringbee/bytecodec/actions)
 
-> Implementation of a byte codec to Marshall/Unmarshall structs to []byte, compatible with Zigbee types, written in Go.
+> Implementation of a byte codec to Marshal/Unmarshal structs to []byte, compatible with Zigbee types, written in Go.
 
 ## Table of Contents
 
@@ -17,11 +17,11 @@
 
 ## Background
 
-bytecodec is a library to marshall and unmarshall Go structs to a []byte, for transmission on the wire. Compatible with Zigbee types, such as 24 bit integers. Includes features such as:
+bytecodec is a library to marshal and unmarshal Go structs to a []byte, for transmission on the wire. Compatible with Zigbee types, such as 24 bit integers. Includes features such as:
 
-* implicit or explicit length counts prepending arrays, counting in items or bytes
-* bitmasks for enumerated types
-* nested structs
+* implicit or explicit length counts prepending arrays, counting in items or bytes,
+* bitmasks for enumerated types,
+* nested structs.
 
 ## Install
 
