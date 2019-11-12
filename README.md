@@ -33,6 +33,37 @@ import "github.com/shimmeringbee/bytecodec"
 
 ## Usage
 
+### Marshalling
+
+Marshalling assumes integers should be expressed as little endian, unless overridden.
+
+Currently supports:
+* uint8, uint16, uint32, uint64
+* struct
+* array/slice
+
+```go
+type StructToMarshal struct {
+    ByteField              byte
+    ArrayOfUint16BigEndian []uint16 `bcendian:"big"`
+    Uint16LittleEndian     uint16
+}
+
+data := &StructToMarshal{
+    ByteField:              0x55,
+    ArrayOfUint16BigEndian: []uint16{0x8001, 0x1234},
+    Uint16LittleEndian:     0x2233,
+}
+
+bytes, err := bytecodec.Marshal(data)
+
+if err != nil {
+    // Handle Error
+}
+
+// bytes = []byte{0x55,0x80,0x01,0x12,0x34,0x33,0x22}
+```
+
 ## Maintainers
 
 [@pwood](https://github.com/pwood)
