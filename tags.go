@@ -1,6 +1,8 @@
 package bytecodec
 
-import "reflect"
+import (
+	"reflect"
+)
 
 func tagEndianness(tag reflect.StructTag) Endian {
 	if tag.Get(TagEndian) == "big" {

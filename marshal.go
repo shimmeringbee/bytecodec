@@ -27,7 +27,11 @@ func Marshall(v interface{}) ([]byte, error) {
 		case reflect.Uint8:
 			bb.WriteByte(uint8(value.Uint()))
 		case reflect.Uint16:
-			writeUint16(&bb, endianness, value.Uint())
+			writeUint(&bb, endianness, 2, value.Uint())
+		case reflect.Uint32:
+			writeUint(&bb, endianness, 4, value.Uint())
+		case reflect.Uint64:
+			writeUint(&bb, endianness, 8, value.Uint())
 
 		default:
 			return nil, fmt.Errorf("%w: field '%s' of type '%v'", UnsupportedType, val.Type().Field(i).Name, kind)
@@ -37,13 +41,17 @@ func Marshall(v interface{}) ([]byte, error) {
 	return bb.Bytes(), nil
 }
 
-func writeUint16(bb *bytes.Buffer, endian Endian, value uint64) {
+func writeUint(bb *bytes.Buffer, endian Endian, size uint8, value uint64) {
 	switch endian {
 	case BigEndian:
-		bb.WriteByte(byte(value >> 8))
-		bb.WriteByte(byte(value))
+		for i := uint8(0); i < size; i++ {
+			shiftOffset := (size - i - 1) * 8
+			bb.WriteByte(byte(value >> shiftOffset))
+		}
 	case LittleEndian:
-		bb.WriteByte(byte(value))
-		bb.WriteByte(byte(value >> 8))
+		for i := uint8(0); i < size; i++ {
+			shiftOffset := i * 8
+			bb.WriteByte(byte(value >> shiftOffset))
+		}
 	}
 }
