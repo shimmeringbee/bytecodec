@@ -118,4 +118,37 @@ func TestMarshal(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, expectedBytes, actualBytes)
 	})
+
+	t.Run("verify nested struct is marshaled", func(t *testing.T) {
+		type StructUnderTest struct {
+			One uint8
+			Two struct {
+				Three uint8
+			}
+		}
+
+		instance := &StructUnderTest{One: 0x01, Two: struct{ Three uint8 }{Three: 0x03}}
+		actualBytes, err := Marshall(instance)
+
+		expectedBytes := []byte{0x01, 0x03}
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedBytes, actualBytes)
+	})
+
+	t.Run("verify nested struct with unmarshalable type errors", func(t *testing.T) {
+		type StructUnderTest struct {
+			One uint8
+			Two struct {
+				Three chan bool
+			}
+		}
+
+		instance := &StructUnderTest{One: 0x01, Two: struct{ Three chan bool }{Three: nil}}
+		_, err := Marshall(instance)
+
+		assert.Error(t, err)
+		assert.True(t, errors.Is(err, UnsupportedType))
+		assert.Equal(t, "unsupported type: field 'Three' of type 'chan'", err.Error())
+	})
 }
