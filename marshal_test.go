@@ -216,4 +216,20 @@ func TestMarshal(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, expectedBytes, actualBytes)
 	})
+
+	t.Run("verify custom type definition marshals", func(t *testing.T) {
+		type NetworkAddress [8]byte
+
+		type StructUnderTest struct {
+			One NetworkAddress
+		}
+
+		instance := &StructUnderTest{One: NetworkAddress{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07}}
+		actualBytes, err := Marshall(instance)
+
+		expectedBytes := []byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07}
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedBytes, actualBytes)
+	})
 }
