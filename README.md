@@ -17,11 +17,7 @@
 
 ## Background
 
-bytecodec is a library to marshal and unmarshal Go structs to a []byte, for transmission on the wire. Compatible with Zigbee types, such as 24 bit integers. Includes features such as:
-
-* implicit or explicit length counts prepending arrays, counting in items or bytes,
-* bitmasks for enumerated types,
-* nested structs.
+bytecodec is a library to marshal and unmarshal Go structs to a []byte, for transmission on the wire. Compatible with Zigbee types, such as 24 bit integers.
 
 ## Install
 
@@ -41,6 +37,7 @@ Currently supports:
 * uint8, uint16, uint32, uint64
 * struct
 * array/slice
+* string (null terminated and length prefixed)
 
 ```go
 type StructToMarshal struct {

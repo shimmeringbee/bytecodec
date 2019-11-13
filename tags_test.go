@@ -29,7 +29,7 @@ func TestTagsEndian(t *testing.T) {
 
 func TestTagsLength(t *testing.T) {
 	t.Run("verifies that unannotated results in a length tag of 0 and little endian", func(t *testing.T) {
-		expectedValue := Length{
+		expectedValue := LengthTag{
 			Size:   0,
 			Endian: LittleEndian,
 		}
@@ -41,7 +41,7 @@ func TestTagsLength(t *testing.T) {
 	})
 
 	t.Run("verifies that annotated with length of one and no endian", func(t *testing.T) {
-		expectedValue := Length{
+		expectedValue := LengthTag{
 			Size:   1,
 			Endian: LittleEndian,
 		}
@@ -53,7 +53,7 @@ func TestTagsLength(t *testing.T) {
 	})
 
 	t.Run("verifies that annotated with length of one and no endian", func(t *testing.T) {
-		expectedValue := Length{
+		expectedValue := LengthTag{
 			Size:   2,
 			Endian: BigEndian,
 		}
@@ -66,6 +66,68 @@ func TestTagsLength(t *testing.T) {
 
 	t.Run("verify that parse of invalid bit count returns error", func(t *testing.T) {
 		_, err := tagLength(`bclength:"SPOON,big"`)
+
+		assert.Error(t, err)
+	})
+}
+
+func TestTagsString(t *testing.T) {
+	t.Run("verifies that unannotated results in a prefix with a length tag of 0 and little endian", func(t *testing.T) {
+		expectedValue := StringTag{
+			Termination: Prefix,
+			Size:        8,
+			Endian:      LittleEndian,
+		}
+		actualValue, err := tagString("")
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedValue, actualValue)
+	})
+
+	t.Run("verifies that annotated with a prefix and length of 16 bits and big endian", func(t *testing.T) {
+		expectedValue := StringTag{
+			Termination: Prefix,
+			Size:        2,
+			Endian:      BigEndian,
+		}
+		actualValue, err := tagString(`bcstring:"prefix,16,big"`)
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedValue, actualValue)
+	})
+
+	t.Run("verifies that annotated with null", func(t *testing.T) {
+		expectedValue := StringTag{
+			Termination: Null,
+			Size:        0,
+			Endian:      LittleEndian,
+		}
+		actualValue, err := tagString(`bcstring:"null"`)
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedValue, actualValue)
+	})
+
+	t.Run("verifies that annotated with null with a padding size", func(t *testing.T) {
+		expectedValue := StringTag{
+			Termination: Null,
+			Size:        8,
+			Endian:      LittleEndian,
+		}
+		actualValue, err := tagString(`bcstring:"null,8"`)
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedValue, actualValue)
+	})
+
+	t.Run("verifies that annotated with null, and an invalid padding size", func(t *testing.T) {
+		_, err := tagString(`bcstring:"null,SPOON,big"`)
+
+		assert.Error(t, err)
+	})
+
+	t.Run("verifies that annotated with prefix, and an invalid padding size", func(t *testing.T) {
+		_, err := tagString(`bcstring:"prefix,SPOON,big"`)
 
 		assert.Error(t, err)
 	})

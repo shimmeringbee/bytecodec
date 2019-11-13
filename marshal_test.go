@@ -3,6 +3,7 @@ package bytecodec
 import (
 	"errors"
 	"github.com/stretchr/testify/assert"
+	"strings"
 	"testing"
 )
 
@@ -273,5 +274,83 @@ func TestMarshal(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedBytes, actualBytes)
+	})
+
+	t.Run("verify size uint8 prefixed string marshals", func(t *testing.T) {
+		type StructUnderTest struct {
+			One string
+		}
+
+		instance := &StructUnderTest{One: "abc"}
+		actualBytes, err := Marshall(instance)
+
+		expectedBytes := []byte{0x03, 0x61, 0x62, 0x63}
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedBytes, actualBytes)
+	})
+
+	t.Run("verify size uint16 big endian prefixed string marshals", func(t *testing.T) {
+		type StructUnderTest struct {
+			One string `bcstring:"prefix,16,big"`
+		}
+
+		instance := &StructUnderTest{One: "abc"}
+		actualBytes, err := Marshall(instance)
+
+		expectedBytes := []byte{0x00, 0x03, 0x61, 0x62, 0x63}
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedBytes, actualBytes)
+	})
+
+	t.Run("verify prefixed string errors if string is longer than prefix can represent", func(t *testing.T) {
+		type StructUnderTest struct {
+			One string
+		}
+
+		instance := &StructUnderTest{One: strings.Repeat("a", 257)}
+		_, err := Marshall(instance)
+
+		assert.Error(t, err)
+	})
+
+	t.Run("verify null terminated string marshals", func(t *testing.T) {
+		type StructUnderTest struct {
+			One string `bcstring:"null"`
+		}
+
+		instance := &StructUnderTest{One: "abc"}
+		actualBytes, err := Marshall(instance)
+
+		expectedBytes := []byte{0x61, 0x62, 0x63, 0x00}
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedBytes, actualBytes)
+	})
+
+	t.Run("verify null terminated string with padding marshals", func(t *testing.T) {
+		type StructUnderTest struct {
+			One string `bcstring:"null,8"`
+		}
+
+		instance := &StructUnderTest{One: "abc"}
+		actualBytes, err := Marshall(instance)
+
+		expectedBytes := []byte{0x61, 0x62, 0x63, 0x00, 0x00, 0x00, 0x00, 0x00}
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedBytes, actualBytes)
+	})
+
+	t.Run("verify null terminated string with padding errors if no room for null terminator", func(t *testing.T) {
+		type StructUnderTest struct {
+			One string `bcstring:"null,4"`
+		}
+
+		instance := &StructUnderTest{One: "abcd"}
+		_, err := Marshall(instance)
+
+		assert.Error(t, err)
 	})
 }
