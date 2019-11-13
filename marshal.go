@@ -14,7 +14,7 @@ func Marshall(v interface{}) ([]byte, error) {
 
 	val := reflect.Indirect(reflect.ValueOf(v))
 
-	if err := marshalValue(&bb, "root", val, LittleEndian); err != nil {
+	if err := marshalValue(&bb, "root", val, ""); err != nil {
 		return nil, err
 	}
 
@@ -30,9 +30,7 @@ func marshalStruct(bb *bytes.Buffer, value reflect.Value) error {
 		tags := field.Tag
 		name := field.Name
 
-		endianness := tagEndianness(tags)
-
-		if err := marshalValue(bb, name, value, endianness); err != nil {
+		if err := marshalValue(bb, name, value, tags); err != nil {
 			return err
 		}
 	}
@@ -40,8 +38,10 @@ func marshalStruct(bb *bytes.Buffer, value reflect.Value) error {
 	return nil
 }
 
-func marshalValue(bb *bytes.Buffer, name string, value reflect.Value, endian Endian) (err error) {
+func marshalValue(bb *bytes.Buffer, name string, value reflect.Value, tags reflect.StructTag) (err error) {
 	kind := value.Kind()
+
+	endian := tagEndianness(tags)
 
 	switch kind {
 	case reflect.Uint8:
@@ -55,7 +55,7 @@ func marshalValue(bb *bytes.Buffer, name string, value reflect.Value, endian End
 	case reflect.Struct:
 		err = marshalStruct(bb, value)
 	case reflect.Array, reflect.Slice:
-		err = marshallArrayOrSlice(bb, value, endian)
+		err = marshallArrayOrSlice(bb, value, tags)
 	default:
 		err = fmt.Errorf("%w: field '%s' of type '%v'", UnsupportedType, name, kind)
 	}
@@ -63,10 +63,19 @@ func marshalValue(bb *bytes.Buffer, name string, value reflect.Value, endian End
 	return
 }
 
-func marshallArrayOrSlice(bb *bytes.Buffer, value reflect.Value, endian Endian) error {
+func marshallArrayOrSlice(bb *bytes.Buffer, value reflect.Value, tags reflect.StructTag) error {
+	length, err := tagLength(tags)
+	if err != nil {
+		return err
+	}
+
+	if length.ShouldInsert() {
+		marshallUint(bb, length.Endian, length.Size, uint64(value.Len()))
+	}
+
 	for i := 0; i < value.Len(); i++ {
 		name := fmt.Sprintf("array[%d]", i)
-		if err := marshalValue(bb, name, value.Index(i), endian); err != nil {
+		if err := marshalValue(bb, name, value.Index(i), tags); err != nil {
 			return err
 		}
 	}

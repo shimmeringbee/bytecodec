@@ -6,6 +6,6 @@ const (
 	BigEndian    Endian = 0
 	LittleEndian Endian = 1
 
-	Tag       = "bc"
 	TagEndian = "bcendian"
+	TagLength = "bclength"
 )
