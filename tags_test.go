@@ -87,7 +87,7 @@ func TestTagsString(t *testing.T) {
 	t.Run("verifies that annotated with a prefix and length of 16 bits and big endian", func(t *testing.T) {
 		expectedValue := StringTag{
 			Termination: Prefix,
-			Size:        2,
+			Size:        16,
 			Endian:      BigEndian,
 		}
 		actualValue, err := tagString(`bcstring:"prefix,16,big"`)

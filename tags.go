@@ -92,11 +92,7 @@ func tagString(tag reflect.StructTag) (s StringTag, err error) {
 		return
 	}
 
-	if s.Termination == Null {
-		s.Size = uint8(count)
-	} else {
-		s.Size = uint8((count + 7) / 8)
-	}
+	s.Size = uint8(count)
 
 	if len(splitTag) <= 2 {
 		return

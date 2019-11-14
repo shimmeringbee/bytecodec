@@ -113,7 +113,7 @@ func marshallString(bb *bytes.Buffer, value reflect.Value, tags reflect.StructTa
 			return fmt.Errorf("string too large to be represented by prefixed length")
 		}
 
-		marshallUint(bb, stringTag.Endian, stringTag.Size, uint64(stringLength))
+		marshallUint(bb, stringTag.Endian, (stringTag.Size+7)/8, uint64(stringLength))
 		bb.WriteString(value.String())
 	}
 
