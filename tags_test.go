@@ -36,7 +36,7 @@ func TestTagsLength(t *testing.T) {
 		actualValue, err := tagLength("")
 
 		assert.NoError(t, err)
-		assert.False(t, actualValue.ShouldInsert())
+		assert.False(t, actualValue.HasLength())
 		assert.Equal(t, expectedValue, actualValue)
 	})
 
@@ -48,7 +48,7 @@ func TestTagsLength(t *testing.T) {
 		actualValue, err := tagLength(`bclength:"8"`)
 
 		assert.NoError(t, err)
-		assert.True(t, actualValue.ShouldInsert())
+		assert.True(t, actualValue.HasLength())
 		assert.Equal(t, expectedValue, actualValue)
 	})
 
@@ -60,7 +60,7 @@ func TestTagsLength(t *testing.T) {
 		actualValue, err := tagLength(`bclength:"16,big"`)
 
 		assert.NoError(t, err)
-		assert.True(t, actualValue.ShouldInsert())
+		assert.True(t, actualValue.HasLength())
 		assert.Equal(t, expectedValue, actualValue)
 	})
 

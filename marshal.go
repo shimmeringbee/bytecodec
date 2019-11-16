@@ -72,7 +72,7 @@ func marshallArrayOrSlice(bb *bytes.Buffer, value reflect.Value, tags reflect.St
 		return err
 	}
 
-	if length.ShouldInsert() {
+	if length.HasLength() {
 		marshallUint(bb, length.Endian, length.Size, uint64(value.Len()))
 	}
 

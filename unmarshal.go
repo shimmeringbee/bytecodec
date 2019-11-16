@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"reflect"
 )
 
@@ -69,6 +70,17 @@ func unmarshalStruct(bb *bytes.Buffer, value reflect.Value) error {
 }
 
 func unmarshallUint(bb *bytes.Buffer, endian EndianTag, size uint8, value reflect.Value) error {
+	readValue, err := readUintFromBuffer(bb, endian, size)
+
+	if err != nil {
+		return err
+	}
+
+	value.SetUint(readValue)
+	return nil
+}
+
+func readUintFromBuffer(bb *bytes.Buffer, endian EndianTag, size uint8) (uint64, error) {
 	readValue := uint64(0)
 
 	switch endian {
@@ -76,7 +88,7 @@ func unmarshallUint(bb *bytes.Buffer, endian EndianTag, size uint8, value reflec
 		for i := uint8(0); i < size; i++ {
 			readByte, err := bb.ReadByte()
 			if err != nil {
-				return err
+				return 0, err
 			}
 
 			shiftOffset := (size - i - 1) * 8
@@ -86,7 +98,7 @@ func unmarshallUint(bb *bytes.Buffer, endian EndianTag, size uint8, value reflec
 		for i := uint8(0); i < size; i++ {
 			readByte, err := bb.ReadByte()
 			if err != nil {
-				return err
+				return 0, err
 			}
 
 			shiftOffset := i * 8
@@ -94,12 +106,16 @@ func unmarshallUint(bb *bytes.Buffer, endian EndianTag, size uint8, value reflec
 		}
 	}
 
-	value.SetUint(readValue)
-	return nil
+	return readValue, nil
 }
 
 func unmarshallArray(bb *bytes.Buffer, value reflect.Value, tags reflect.StructTag) error {
-	for i := 0; i < value.Len(); i++ {
+	arraySize, err := readArraySliceLength(bb, tags, value.Len())
+	if err != nil {
+		return err
+	}
+
+	for i := 0; i < arraySize; i++ {
 		name := fmt.Sprintf("array[%d]", i)
 		if err := unmarshalValue(bb, name, value.Index(i), tags); err != nil {
 			return err
@@ -110,13 +126,17 @@ func unmarshallArray(bb *bytes.Buffer, value reflect.Value, tags reflect.StructT
 }
 
 func unmarshallSlice(bb *bytes.Buffer, value reflect.Value, tags reflect.StructTag) error {
-	i := 0
+	sliceSize, err := readArraySliceLength(bb, tags, math.MaxInt64)
+	if err != nil {
+		return err
+	}
+
 	value.Set(reflect.MakeSlice(value.Type(), 0, 0))
 
-	for {
+	for i := 0; i < sliceSize; i++ {
 		sliceValue := reflect.New(value.Type().Elem()).Elem()
 
-		name := fmt.Sprintf("array[%d]", i)
+		name := fmt.Sprintf("slice[%d]", i)
 		if err := unmarshalValue(bb, name, sliceValue, tags); err != nil {
 			if errors.Is(err, io.EOF) {
 				return nil
@@ -125,8 +145,26 @@ func unmarshallSlice(bb *bytes.Buffer, value reflect.Value, tags reflect.StructT
 			return err
 		}
 
-		i += 1
-
 		value.Set(reflect.Append(value, sliceValue))
+	}
+
+	return nil
+}
+
+func readArraySliceLength(bb *bytes.Buffer, tags reflect.StructTag, max int) (int, error) {
+	length, err := tagLength(tags)
+	if err != nil {
+		return 0, err
+	}
+
+	if length.HasLength() {
+		readSize, err := readUintFromBuffer(bb, length.Endian, length.Size)
+		if err != nil {
+			return 0, err
+		}
+
+		return int(readSize), nil
+	} else {
+		return max, nil
 	}
 }

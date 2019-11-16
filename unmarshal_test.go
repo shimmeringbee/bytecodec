@@ -262,4 +262,50 @@ func TestUnmarshall(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, expectedStruct, actualStruct)
 	})
+
+	t.Run("verify slices support implicit length annotations, uint8", func(t *testing.T) {
+		type StructUnderTest struct {
+			One []byte `bclength:"8"`
+		}
+
+		expectedStruct := &StructUnderTest{One: []byte{0x55, 0xaa}}
+		data, _ := Marshall(expectedStruct)
+
+		actualStruct := &StructUnderTest{}
+		err := Unmarshall(data, actualStruct)
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedStruct, actualStruct)
+	})
+
+	t.Run("verify arrays support implicit length annotations, uint8", func(t *testing.T) {
+		type StructUnderTest struct {
+			One [2]byte `bclength:"8"`
+		}
+
+		expectedStruct := &StructUnderTest{One: [2]byte{0x55, 0xaa}}
+		data, _ := Marshall(expectedStruct)
+
+		actualStruct := &StructUnderTest{}
+		err := Unmarshall(data, actualStruct)
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedStruct, actualStruct)
+	})
+
+	t.Run("verify slices support implicit length annotations, uint16, big endian", func(t *testing.T) {
+		type StructUnderTest struct {
+			One []byte `bclength:"16,big"`
+		}
+
+		expectedStruct := &StructUnderTest{One: []byte{0x55, 0xaa}}
+		data, _ := Marshall(expectedStruct)
+
+		actualStruct := &StructUnderTest{}
+		err := Unmarshall(data, actualStruct)
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedStruct, actualStruct)
+	})
+
 }

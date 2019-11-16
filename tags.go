@@ -22,7 +22,7 @@ type LengthTag struct {
 	Endian EndianTag
 }
 
-func (l LengthTag) ShouldInsert() bool {
+func (l LengthTag) HasLength() bool {
 	return l.Size > 0
 }
 
