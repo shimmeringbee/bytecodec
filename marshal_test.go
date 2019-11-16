@@ -191,7 +191,7 @@ func TestMarshal(t *testing.T) {
 		assert.Equal(t, expectedBytes, actualBytes)
 	})
 
-	t.Run("verify an array with unmarshalable type errors", func(t *testing.T) {
+	t.Run("verify an array with marshalable type errors", func(t *testing.T) {
 		type StructUnderTest struct {
 			One [2]chan bool
 		}

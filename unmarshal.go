@@ -2,7 +2,9 @@ package bytecodec
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
+	"io"
 	"reflect"
 )
 
@@ -38,6 +40,10 @@ func unmarshalValue(bb *bytes.Buffer, name string, value reflect.Value, tags ref
 		err = unmarshallUint(bb, endian, 8, value)
 	case reflect.Struct:
 		err = unmarshalStruct(bb, value)
+	case reflect.Array:
+		err = unmarshallArray(bb, value, tags)
+	case reflect.Slice:
+		err = unmarshallSlice(bb, value, tags)
 	default:
 		err = fmt.Errorf("%w: field '%s' of type '%v'", UnsupportedType, name, kind)
 	}
@@ -90,4 +96,37 @@ func unmarshallUint(bb *bytes.Buffer, endian EndianTag, size uint8, value reflec
 
 	value.SetUint(readValue)
 	return nil
+}
+
+func unmarshallArray(bb *bytes.Buffer, value reflect.Value, tags reflect.StructTag) error {
+	for i := 0; i < value.Len(); i++ {
+		name := fmt.Sprintf("array[%d]", i)
+		if err := unmarshalValue(bb, name, value.Index(i), tags); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func unmarshallSlice(bb *bytes.Buffer, value reflect.Value, tags reflect.StructTag) error {
+	i := 0
+	value.Set(reflect.MakeSlice(value.Type(), 0, 0))
+
+	for {
+		sliceValue := reflect.New(value.Type().Elem()).Elem()
+
+		name := fmt.Sprintf("array[%d]", i)
+		if err := unmarshalValue(bb, name, sliceValue, tags); err != nil {
+			if errors.Is(err, io.EOF) {
+				return nil
+			}
+
+			return err
+		}
+
+		i += 1
+
+		value.Set(reflect.Append(value, sliceValue))
+	}
 }
