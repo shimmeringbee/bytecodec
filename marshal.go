@@ -56,9 +56,9 @@ func marshalValue(bb *bytes.Buffer, name string, value reflect.Value, tags refle
 	case reflect.Struct:
 		err = marshalStruct(bb, value)
 	case reflect.Array, reflect.Slice:
-		err = marshallArrayOrSlice(bb, value, tags)
+		err = marshalArrayOrSlice(bb, value, tags)
 	case reflect.String:
-		err = marshallString(bb, value, tags)
+		err = marshalString(bb, value, tags)
 	default:
 		err = fmt.Errorf("%w: field '%s' of type '%v'", UnsupportedType, name, kind)
 	}
@@ -66,7 +66,7 @@ func marshalValue(bb *bytes.Buffer, name string, value reflect.Value, tags refle
 	return
 }
 
-func marshallArrayOrSlice(bb *bytes.Buffer, value reflect.Value, tags reflect.StructTag) error {
+func marshalArrayOrSlice(bb *bytes.Buffer, value reflect.Value, tags reflect.StructTag) error {
 	length, err := tagLength(tags)
 	if err != nil {
 		return err
@@ -86,7 +86,7 @@ func marshallArrayOrSlice(bb *bytes.Buffer, value reflect.Value, tags reflect.St
 	return nil
 }
 
-func marshallString(bb *bytes.Buffer, value reflect.Value, tags reflect.StructTag) error {
+func marshalString(bb *bytes.Buffer, value reflect.Value, tags reflect.StructTag) error {
 	stringTag, err := tagString(tags)
 	if err != nil {
 		return err

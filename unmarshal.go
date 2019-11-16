@@ -7,6 +7,7 @@ import (
 	"io"
 	"math"
 	"reflect"
+	"strings"
 )
 
 func Unmarshall(data []byte, v interface{}) (err error) {
@@ -42,9 +43,11 @@ func unmarshalValue(bb *bytes.Buffer, name string, value reflect.Value, tags ref
 	case reflect.Struct:
 		err = unmarshalStruct(bb, value)
 	case reflect.Array:
-		err = unmarshallArray(bb, value, tags)
+		err = unmarshalArray(bb, value, tags)
 	case reflect.Slice:
-		err = unmarshallSlice(bb, value, tags)
+		err = unmarshalSlice(bb, value, tags)
+	case reflect.String:
+		err = unmarshalString(bb, value, tags)
 	default:
 		err = fmt.Errorf("%w: field '%s' of type '%v'", UnsupportedType, name, kind)
 	}
@@ -109,7 +112,7 @@ func readUintFromBuffer(bb *bytes.Buffer, endian EndianTag, size uint8) (uint64,
 	return readValue, nil
 }
 
-func unmarshallArray(bb *bytes.Buffer, value reflect.Value, tags reflect.StructTag) error {
+func unmarshalArray(bb *bytes.Buffer, value reflect.Value, tags reflect.StructTag) error {
 	arraySize, err := readArraySliceLength(bb, tags, value.Len())
 	if err != nil {
 		return err
@@ -125,7 +128,7 @@ func unmarshallArray(bb *bytes.Buffer, value reflect.Value, tags reflect.StructT
 	return nil
 }
 
-func unmarshallSlice(bb *bytes.Buffer, value reflect.Value, tags reflect.StructTag) error {
+func unmarshalSlice(bb *bytes.Buffer, value reflect.Value, tags reflect.StructTag) error {
 	sliceSize, err := readArraySliceLength(bb, tags, math.MaxInt64)
 	if err != nil {
 		return err
@@ -167,4 +170,68 @@ func readArraySliceLength(bb *bytes.Buffer, tags reflect.StructTag, max int) (in
 	} else {
 		return max, nil
 	}
+}
+
+func unmarshalString(bb *bytes.Buffer, value reflect.Value, tags reflect.StructTag) error {
+	stringTag, err := tagString(tags)
+	if err != nil {
+		return err
+	}
+
+	sb := strings.Builder{}
+
+	if stringTag.Termination == Null {
+		maxLength := math.MaxInt64
+
+		if stringTag.Size != 0 {
+			maxLength = int(stringTag.Size)
+		}
+
+		i := 0
+
+		readByte := ^byte(0)
+
+		for ; i < maxLength; i++ {
+			readByte, err = bb.ReadByte()
+			if err != nil {
+				return err
+			}
+
+			if readByte == 0 {
+				i++
+				break
+			}
+
+			sb.WriteByte(readByte)
+		}
+
+		if readByte != 0 {
+			return errors.New("no null termination found in string")
+		}
+
+		for ; i < int(stringTag.Size); i++ {
+			_, err := bb.ReadByte()
+			if err != nil {
+				return err
+			}
+		}
+
+	} else {
+		stringLength, err := readUintFromBuffer(bb, stringTag.Endian, (stringTag.Size+7)/8)
+		if err != nil {
+			return err
+		}
+
+		for i := 0; i < int(stringLength); i++ {
+			readByte, err := bb.ReadByte()
+			if err != nil {
+				return err
+			}
+
+			sb.WriteByte(readByte)
+		}
+	}
+
+	value.SetString(sb.String())
+	return nil
 }

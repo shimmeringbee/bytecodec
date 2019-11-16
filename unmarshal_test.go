@@ -308,4 +308,92 @@ func TestUnmarshall(t *testing.T) {
 		assert.Equal(t, expectedStruct, actualStruct)
 	})
 
+	t.Run("verify slices support implicit length annotations, uint16, default little endian", func(t *testing.T) {
+		type StructUnderTest struct {
+			One []byte `bclength:"16"`
+		}
+
+		expectedStruct := &StructUnderTest{One: []byte{0x55, 0xaa}}
+		data, _ := Marshall(expectedStruct)
+
+		actualStruct := &StructUnderTest{}
+		err := Unmarshall(data, actualStruct)
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedStruct, actualStruct)
+	})
+
+	t.Run("verify size uint8 prefixed string unmarshals", func(t *testing.T) {
+		type StructUnderTest struct {
+			One string
+		}
+
+		expectedStruct := &StructUnderTest{One: "abc"}
+		data, _ := Marshall(expectedStruct)
+
+		actualStruct := &StructUnderTest{}
+		err := Unmarshall(data, actualStruct)
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedStruct, actualStruct)
+	})
+
+	t.Run("verify size uint16 big endian prefixed string unmarshals", func(t *testing.T) {
+		type StructUnderTest struct {
+			One string `bcstring:"prefix,16,big"`
+		}
+
+		expectedStruct := &StructUnderTest{One: "abc"}
+		data, _ := Marshall(expectedStruct)
+
+		actualStruct := &StructUnderTest{}
+		err := Unmarshall(data, actualStruct)
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedStruct, actualStruct)
+	})
+
+	t.Run("verify null terminated string unmarshals", func(t *testing.T) {
+		type StructUnderTest struct {
+			One string `bcstring:"null"`
+		}
+
+		expectedStruct := &StructUnderTest{One: "abc"}
+		data, _ := Marshall(expectedStruct)
+
+		actualStruct := &StructUnderTest{}
+		err := Unmarshall(data, actualStruct)
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedStruct, actualStruct)
+	})
+
+	t.Run("verify null terminated string with padding unmarshals, skipping padding", func(t *testing.T) {
+		type StructUnderTest struct {
+			One string `bcstring:"null,8"`
+			Two byte
+		}
+
+		expectedStruct := &StructUnderTest{One: "abc", Two: 0x80}
+		data, _ := Marshall(expectedStruct)
+
+		actualStruct := &StructUnderTest{}
+		err := Unmarshall(data, actualStruct)
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedStruct, actualStruct)
+	})
+
+	t.Run("verify null terminated string with padding errors if null terminator could not be read", func(t *testing.T) {
+		type StructUnderTest struct {
+			One string `bcstring:"null,4"`
+		}
+
+		data := []byte{0x61, 0x62, 0x63, 0x64}
+
+		actualStruct := &StructUnderTest{}
+		err := Unmarshall(data, actualStruct)
+
+		assert.Error(t, err)
+	})
 }
