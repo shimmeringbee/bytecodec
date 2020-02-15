@@ -19,17 +19,21 @@ func Unmarshal(data []byte, v interface{}) (err error) {
 		return fmt.Errorf("cannot unmarshall to non pointer")
 	}
 
-	if err = unmarshalValue(bb, "root", val, ""); err != nil {
+	if err = unmarshalValue(bb, "root", val, val, val, ""); err != nil {
 		return
 	}
 
 	return
 }
 
-func unmarshalValue(bb *bytes.Buffer, name string, value reflect.Value, tags reflect.StructTag) (err error) {
+func unmarshalValue(bb *bytes.Buffer, name string, value reflect.Value, root reflect.Value, parent reflect.Value, tags reflect.StructTag) (err error) {
 	kind := value.Kind()
 
 	endian := tagEndianness(tags)
+
+	if skip, err := shouldIgnore(tags, root, parent); skip || err != nil {
+		return err
+	}
 
 	switch kind {
 	case reflect.Bool:
@@ -43,11 +47,11 @@ func unmarshalValue(bb *bytes.Buffer, name string, value reflect.Value, tags ref
 	case reflect.Uint64:
 		err = unmarshalUint(bb, endian, 8, value)
 	case reflect.Struct:
-		err = unmarshalStruct(bb, value)
+		err = unmarshalStruct(bb, value, root)
 	case reflect.Array:
-		err = unmarshalArray(bb, value, tags)
+		err = unmarshalArray(bb, value, root, parent, tags)
 	case reflect.Slice:
-		err = unmarshalSlice(bb, value, tags)
+		err = unmarshalSlice(bb, value, root, parent, tags)
 	case reflect.String:
 		err = unmarshalString(bb, value, tags)
 	default:
@@ -57,16 +61,16 @@ func unmarshalValue(bb *bytes.Buffer, name string, value reflect.Value, tags ref
 	return
 }
 
-func unmarshalStruct(bb *bytes.Buffer, value reflect.Value) error {
-	structType := value.Type()
+func unmarshalStruct(bb *bytes.Buffer, structValue reflect.Value, root reflect.Value) error {
+	structType := structValue.Type()
 
-	for i := 0; i < value.NumField(); i++ {
-		value := value.Field(i)
+	for i := 0; i < structValue.NumField(); i++ {
+		value := structValue.Field(i)
 		field := structType.Field(i)
 		tags := field.Tag
 		name := field.Name
 
-		if err := unmarshalValue(bb, name, value, tags); err != nil {
+		if err := unmarshalValue(bb, name, value, root, structValue, tags); err != nil {
 			return err
 		}
 	}
@@ -126,7 +130,7 @@ func readUintFromBuffer(bb *bytes.Buffer, endian EndianTag, size uint8) (uint64,
 	return readValue, nil
 }
 
-func unmarshalArray(bb *bytes.Buffer, value reflect.Value, tags reflect.StructTag) error {
+func unmarshalArray(bb *bytes.Buffer, value reflect.Value, root reflect.Value, parent reflect.Value, tags reflect.StructTag) error {
 	arraySize, err := readArraySliceLength(bb, tags, value.Len())
 	if err != nil {
 		return err
@@ -134,7 +138,7 @@ func unmarshalArray(bb *bytes.Buffer, value reflect.Value, tags reflect.StructTa
 
 	for i := 0; i < arraySize; i++ {
 		name := fmt.Sprintf("array[%d]", i)
-		if err := unmarshalValue(bb, name, value.Index(i), tags); err != nil {
+		if err := unmarshalValue(bb, name, value.Index(i), root, parent, tags); err != nil {
 			return err
 		}
 	}
@@ -142,7 +146,7 @@ func unmarshalArray(bb *bytes.Buffer, value reflect.Value, tags reflect.StructTa
 	return nil
 }
 
-func unmarshalSlice(bb *bytes.Buffer, value reflect.Value, tags reflect.StructTag) error {
+func unmarshalSlice(bb *bytes.Buffer, value reflect.Value, root reflect.Value, parent reflect.Value, tags reflect.StructTag) error {
 	sliceSize, err := readArraySliceLength(bb, tags, math.MaxInt64)
 	if err != nil {
 		return err
@@ -154,7 +158,7 @@ func unmarshalSlice(bb *bytes.Buffer, value reflect.Value, tags reflect.StructTa
 		sliceValue := reflect.New(value.Type().Elem()).Elem()
 
 		name := fmt.Sprintf("slice[%d]", i)
-		if err := unmarshalValue(bb, name, sliceValue, tags); err != nil {
+		if err := unmarshalValue(bb, name, sliceValue, root, parent, tags); err != nil {
 			if errors.Is(err, io.EOF) {
 				return nil
 			}

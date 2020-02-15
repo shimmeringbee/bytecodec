@@ -411,4 +411,23 @@ func TestUnmarshall(t *testing.T) {
 
 		assert.Error(t, err)
 	})
+
+	t.Run("verifies that unmarshalling struct with includeif is obeyed", func(t *testing.T) {
+		type StructUnderTest struct {
+			One   bool
+			Two   uint8 `bcincludeif:"One"`
+			Three uint8
+		}
+
+		inputStruct := &StructUnderTest{One: false, Two: 2, Three: 3}
+		expectedStruct := &StructUnderTest{One: false, Two: 0, Three: 3}
+
+		data, _ := Marshal(inputStruct)
+
+		actualStruct := &StructUnderTest{}
+		err := Unmarshal(data, actualStruct)
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedStruct, actualStruct)
+	})
 }

@@ -22,63 +22,13 @@ func Marshal(v interface{}) ([]byte, error) {
 	return bb.Bytes(), nil
 }
 
-func foundBooleanValue(structValue reflect.Value, path []string) (bool, error) {
-	structType := structValue.Type()
-
-	thisLevel := path[0]
-	remainingPath := path[1:]
-
-	for i := 0; i < structValue.NumField(); i++ {
-		value := structValue.Field(i)
-		field := structType.Field(i)
-		name := field.Name
-
-		if name == thisLevel {
-			if len(remainingPath) > 1 {
-				if value.Kind() != reflect.Struct {
-					return false, fmt.Errorf("includeIf path could not be parsed: %s is not a struct", name)
-				}
-
-				return foundBooleanValue(value, remainingPath)
-			}
-
-			if value.Kind() != reflect.Bool {
-				return false, fmt.Errorf("includeIf path could not be parsed: %s is not a boolean (end parameter)", name)
-			}
-
-			return value.Bool(), nil
-		}
-	}
-
-	return false, fmt.Errorf("includeIf path could not be parsed: %s not found", thisLevel)
-}
-
 func marshalValue(bb *bytes.Buffer, name string, value reflect.Value, root reflect.Value, parent reflect.Value, tags reflect.StructTag) (err error) {
 	kind := value.Kind()
 
 	endian := tagEndianness(tags)
-	includeIf, err := tagIncludeIf(tags)
 
-	if err != nil {
-		return
-	}
-
-	if len(includeIf.FieldPath) > 0 {
-		includeBase := root
-
-		if includeIf.Relative {
-			includeBase = parent
-		}
-
-		boolVal, err := foundBooleanValue(includeBase, includeIf.FieldPath)
-
-		if err != nil {
-			return err
-		}
-
-		if includeIf.Value != boolVal {
-			return nil
-		}
+	if skip, err := shouldIgnore(tags, root, parent); skip || err != nil {
+		return err
 	}
 
 	switch kind {
