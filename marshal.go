@@ -15,34 +15,71 @@ func Marshal(v interface{}) ([]byte, error) {
 
 	val := reflect.Indirect(reflect.ValueOf(v))
 
-	if err := marshalValue(&bb, "root", val, ""); err != nil {
+	if err := marshalValue(&bb, "root", val, val, val, ""); err != nil {
 		return nil, err
 	}
 
 	return bb.Bytes(), nil
 }
 
-func marshalStruct(bb *bytes.Buffer, value reflect.Value) error {
-	structType := value.Type()
+func foundBooleanValue(structValue reflect.Value, path []string) (bool, error) {
+	structType := structValue.Type()
 
-	for i := 0; i < value.NumField(); i++ {
-		value := value.Field(i)
+	thisLevel := path[0]
+	remainingPath := path[1:]
+
+	for i := 0; i < structValue.NumField(); i++ {
+		value := structValue.Field(i)
 		field := structType.Field(i)
-		tags := field.Tag
 		name := field.Name
 
-		if err := marshalValue(bb, name, value, tags); err != nil {
-			return err
+		if name == thisLevel {
+			if len(remainingPath) > 1 {
+				if value.Kind() != reflect.Struct {
+					return false, fmt.Errorf("includeIf path could not be parsed: %s is not a struct", name)
+				}
+
+				return foundBooleanValue(value, remainingPath)
+			}
+
+			if value.Kind() != reflect.Bool {
+				return false, fmt.Errorf("includeIf path could not be parsed: %s is not a boolean (end parameter)", name)
+			}
+
+			return value.Bool(), nil
 		}
 	}
 
-	return nil
+	return false, fmt.Errorf("includeIf path could not be parsed: %s not found", thisLevel)
 }
 
-func marshalValue(bb *bytes.Buffer, name string, value reflect.Value, tags reflect.StructTag) (err error) {
+func marshalValue(bb *bytes.Buffer, name string, value reflect.Value, root reflect.Value, parent reflect.Value, tags reflect.StructTag) (err error) {
 	kind := value.Kind()
 
 	endian := tagEndianness(tags)
+	includeIf, err := tagIncludeIf(tags)
+
+	if err != nil {
+		return
+	}
+
+	if len(includeIf.FieldPath) > 0 {
+		includeBase := root
+
+		if includeIf.Relative {
+			includeBase = parent
+		}
+
+		boolVal, err := foundBooleanValue(includeBase, includeIf.FieldPath)
+
+		if err != nil {
+			return err
+		}
+
+		if includeIf.Value != boolVal {
+			return nil
+		}
+	}
 
 	switch kind {
 	case reflect.Bool:
@@ -56,9 +93,9 @@ func marshalValue(bb *bytes.Buffer, name string, value reflect.Value, tags refle
 	case reflect.Uint64:
 		marshalUint(bb, endian, 8, value.Uint())
 	case reflect.Struct:
-		err = marshalStruct(bb, value)
+		err = marshalStruct(bb, value, root)
 	case reflect.Array, reflect.Slice:
-		err = marshalArrayOrSlice(bb, value, tags)
+		err = marshalArrayOrSlice(bb, value, root, parent, tags)
 	case reflect.String:
 		err = marshalString(bb, value, tags)
 	default:
@@ -68,7 +105,24 @@ func marshalValue(bb *bytes.Buffer, name string, value reflect.Value, tags refle
 	return
 }
 
-func marshalArrayOrSlice(bb *bytes.Buffer, value reflect.Value, tags reflect.StructTag) error {
+func marshalStruct(bb *bytes.Buffer, structValue reflect.Value, root reflect.Value) error {
+	structType := structValue.Type()
+
+	for i := 0; i < structValue.NumField(); i++ {
+		value := structValue.Field(i)
+		field := structType.Field(i)
+		tags := field.Tag
+		name := field.Name
+
+		if err := marshalValue(bb, name, value, root, structValue, tags); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func marshalArrayOrSlice(bb *bytes.Buffer, value reflect.Value, root reflect.Value, parent reflect.Value, tags reflect.StructTag) error {
 	length, err := tagLength(tags)
 	if err != nil {
 		return err
@@ -80,7 +134,7 @@ func marshalArrayOrSlice(bb *bytes.Buffer, value reflect.Value, tags reflect.Str
 
 	for i := 0; i < value.Len(); i++ {
 		name := fmt.Sprintf("array[%d]", i)
-		if err := marshalValue(bb, name, value.Index(i), tags); err != nil {
+		if err := marshalValue(bb, name, value.Index(i), root, parent, tags); err != nil {
 			return err
 		}
 	}

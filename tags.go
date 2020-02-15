@@ -114,6 +114,10 @@ type IncludeIfTag struct {
 func tagIncludeIf(tag reflect.StructTag) (i IncludeIfTag, err error) {
 	rawTag := tag.Get(TagIncludeIf)
 
+	if rawTag == "" {
+		return IncludeIfTag{}, nil
+	}
+
 	i.Value = true
 	i.Relative = rawTag[0] != '.'
 

@@ -381,4 +381,114 @@ func TestMarshal(t *testing.T) {
 
 		assert.Error(t, err)
 	})
+
+	t.Run("verify struct with includeIf omits a field if required field is not true", func(t *testing.T) {
+		type StructUnderTest struct {
+			One bool
+			Two uint8 `bcincludeif:".One"`
+		}
+
+		instance := &StructUnderTest{One: false, Two: 2}
+		actualBytes, err := Marshal(instance)
+
+		expectedBytes := []byte{0x00}
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedBytes, actualBytes)
+	})
+
+	t.Run("verify struct with includeIf marshals a field if required field is true", func(t *testing.T) {
+		type StructUnderTest struct {
+			One bool
+			Two uint8 `bcincludeif:".One"`
+		}
+
+		instance := &StructUnderTest{One: true, Two: 2}
+		actualBytes, err := Marshal(instance)
+
+		expectedBytes := []byte{0x01, 0x02}
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedBytes, actualBytes)
+	})
+
+	t.Run("verify struct with includeIf correctly handles absolute references and excludes if false", func(t *testing.T) {
+		type Nested struct {
+			One bool
+			Two uint8 `bcincludeif:".One"`
+		}
+
+		type StructUnderTest struct {
+			One    bool
+			Nested Nested
+		}
+
+		instance := &StructUnderTest{One: false, Nested: Nested{One: true, Two: 2}}
+		actualBytes, err := Marshal(instance)
+
+		expectedBytes := []byte{0x00, 0x01}
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedBytes, actualBytes)
+	})
+
+	t.Run("verify struct with includeIf correctly handles absolute references and includes if true", func(t *testing.T) {
+		type Nested struct {
+			One bool
+			Two uint8 `bcincludeif:".One"`
+		}
+
+		type StructUnderTest struct {
+			One    bool
+			Nested Nested
+		}
+
+		instance := &StructUnderTest{One: true, Nested: Nested{One: false, Two: 2}}
+		actualBytes, err := Marshal(instance)
+
+		expectedBytes := []byte{0x01, 0x00, 0x02}
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedBytes, actualBytes)
+	})
+
+	t.Run("verify struct with includeIf handles relative reference and excludes if false", func(t *testing.T) {
+		type Nested struct {
+			One bool
+			Two uint8 `bcincludeif:"One"`
+		}
+
+		type StructUnderTest struct {
+			One    bool
+			Nested Nested
+		}
+
+		instance := &StructUnderTest{One: true, Nested: Nested{One: false, Two: 2}}
+		actualBytes, err := Marshal(instance)
+
+		expectedBytes := []byte{0x01, 0x00}
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedBytes, actualBytes)
+	})
+
+	t.Run("verify struct with includeIf handles relative reference and includes if true", func(t *testing.T) {
+		type Nested struct {
+			One bool
+			Two uint8 `bcincludeif:"One"`
+		}
+
+		type StructUnderTest struct {
+			One    bool
+			Nested Nested
+		}
+
+		instance := &StructUnderTest{One: false, Nested: Nested{One: true, Two: 2}}
+		actualBytes, err := Marshal(instance)
+
+		expectedBytes := []byte{0x00, 0x01, 0x02}
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedBytes, actualBytes)
+	})
 }
