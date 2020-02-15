@@ -11,7 +11,8 @@ const (
 	Prefix StringTermination = 0
 	Null   StringTermination = 1
 
-	TagEndian = "bcendian"
-	TagLength = "bclength"
-	TagString = "bcstring"
+	TagEndian    = "bcendian"
+	TagLength    = "bclength"
+	TagString    = "bcstring"
+	TagIncludeIf = "bcincludeif"
 )

@@ -132,3 +132,71 @@ func TestTagsString(t *testing.T) {
 		assert.Error(t, err)
 	})
 }
+
+func TestTagsIncludeIf(t *testing.T) {
+	t.Run("verifies that single path non relative defaults to true", func(t *testing.T) {
+		tag, err := tagIncludeIf(`bcincludeif:".field"`)
+
+		assert.Equal(t, IncludeIfTag{
+			Relative:  false,
+			FieldPath: []string{"field"},
+			Value:     true,
+		}, tag)
+		assert.NoError(t, err)
+	})
+
+	t.Run("verifies that single path relative defaults to true", func(t *testing.T) {
+		tag, err := tagIncludeIf(`bcincludeif:"field"`)
+
+		assert.Equal(t, IncludeIfTag{
+			Relative:  true,
+			FieldPath: []string{"field"},
+			Value:     true,
+		}, tag)
+		assert.NoError(t, err)
+	})
+
+	t.Run("verifies that multiple path non relative defaults to true", func(t *testing.T) {
+		tag, err := tagIncludeIf(`bcincludeif:".fieldOne.fieldTwo"`)
+
+		assert.Equal(t, IncludeIfTag{
+			Relative:  false,
+			FieldPath: []string{"fieldOne", "fieldTwo"},
+			Value:     true,
+		}, tag)
+		assert.NoError(t, err)
+	})
+
+	t.Run("verifies that multiple path relative defaults to true", func(t *testing.T) {
+		tag, err := tagIncludeIf(`bcincludeif:"fieldOne.fieldTwo"`)
+
+		assert.Equal(t, IncludeIfTag{
+			Relative:  true,
+			FieldPath: []string{"fieldOne", "fieldTwo"},
+			Value:     true,
+		}, tag)
+		assert.NoError(t, err)
+	})
+
+	t.Run("verifies that single path non relative set to true", func(t *testing.T) {
+		tag, err := tagIncludeIf(`bcincludeif:".field=true"`)
+
+		assert.Equal(t, IncludeIfTag{
+			Relative:  false,
+			FieldPath: []string{"field"},
+			Value:     true,
+		}, tag)
+		assert.NoError(t, err)
+	})
+
+	t.Run("verifies that single path non relative set to false", func(t *testing.T) {
+		tag, err := tagIncludeIf(`bcincludeif:".field=false"`)
+
+		assert.Equal(t, IncludeIfTag{
+			Relative:  false,
+			FieldPath: []string{"field"},
+			Value:     false,
+		}, tag)
+		assert.NoError(t, err)
+	})
+}

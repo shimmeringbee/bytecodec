@@ -104,3 +104,37 @@ func tagString(tag reflect.StructTag) (s StringTag, err error) {
 
 	return
 }
+
+type IncludeIfTag struct {
+	Relative  bool
+	FieldPath []string
+	Value     bool
+}
+
+func tagIncludeIf(tag reflect.StructTag) (i IncludeIfTag, err error) {
+	rawTag := tag.Get(TagIncludeIf)
+
+	i.Value = true
+	i.Relative = rawTag[0] != '.'
+
+	tagParts := strings.Split(rawTag, "=")
+
+	if len(tagParts) > 1 {
+		i.Value, err = strconv.ParseBool(tagParts[1])
+
+		if err != nil {
+			return
+		}
+	}
+
+	pathParts := strings.Split(tagParts[0], ".")
+	partStart := 1
+
+	if i.Relative {
+		partStart = 0
+	}
+
+	i.FieldPath = pathParts[partStart:]
+
+	return
+}
