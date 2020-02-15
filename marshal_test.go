@@ -14,11 +14,25 @@ func TestMarshal(t *testing.T) {
 		}
 
 		instance := &StructUnderTest{}
-		_, err := Marshall(instance)
+		_, err := Marshal(instance)
 
 		assert.Error(t, err)
 		assert.True(t, errors.Is(err, UnsupportedType))
 		assert.Equal(t, "unsupported type: field 'One' of type 'chan'", err.Error())
+	})
+
+	t.Run("verify bool marshals", func(t *testing.T) {
+		type StructUnderTest struct {
+			One bool
+		}
+
+		instance := &StructUnderTest{One: true}
+		actualBytes, err := Marshal(instance)
+
+		expectedBytes := []byte{0x01}
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedBytes, actualBytes)
 	})
 
 	t.Run("verify byte and uint8 marshals", func(t *testing.T) {
@@ -28,7 +42,7 @@ func TestMarshal(t *testing.T) {
 		}
 
 		instance := &StructUnderTest{One: 0x55, Two: 0xaa}
-		actualBytes, err := Marshall(instance)
+		actualBytes, err := Marshal(instance)
 
 		expectedBytes := []byte{0x55, 0xaa}
 
@@ -42,7 +56,7 @@ func TestMarshal(t *testing.T) {
 		}
 
 		instance := &StructUnderTest{One: 0x8001}
-		actualBytes, err := Marshall(instance)
+		actualBytes, err := Marshal(instance)
 
 		expectedBytes := []byte{0x01, 0x80}
 
@@ -56,7 +70,7 @@ func TestMarshal(t *testing.T) {
 		}
 
 		instance := &StructUnderTest{One: 0x8001}
-		actualBytes, err := Marshall(instance)
+		actualBytes, err := Marshal(instance)
 
 		expectedBytes := []byte{0x80, 0x01}
 
@@ -70,7 +84,7 @@ func TestMarshal(t *testing.T) {
 		}
 
 		instance := &StructUnderTest{One: 0x80010203}
-		actualBytes, err := Marshall(instance)
+		actualBytes, err := Marshal(instance)
 
 		expectedBytes := []byte{0x03, 0x02, 0x01, 0x80}
 
@@ -84,7 +98,7 @@ func TestMarshal(t *testing.T) {
 		}
 
 		instance := &StructUnderTest{One: 0x80010203}
-		actualBytes, err := Marshall(instance)
+		actualBytes, err := Marshal(instance)
 
 		expectedBytes := []byte{0x80, 0x01, 0x02, 0x03}
 
@@ -98,7 +112,7 @@ func TestMarshal(t *testing.T) {
 		}
 
 		instance := &StructUnderTest{One: 0x8001020304050607}
-		actualBytes, err := Marshall(instance)
+		actualBytes, err := Marshal(instance)
 
 		expectedBytes := []byte{0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01, 0x80}
 
@@ -112,7 +126,7 @@ func TestMarshal(t *testing.T) {
 		}
 
 		instance := &StructUnderTest{One: 0x8001020304050607}
-		actualBytes, err := Marshall(instance)
+		actualBytes, err := Marshal(instance)
 
 		expectedBytes := []byte{0x80, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07}
 
@@ -129,7 +143,7 @@ func TestMarshal(t *testing.T) {
 		}
 
 		instance := &StructUnderTest{One: 0x01, Two: struct{ Three uint8 }{Three: 0x03}}
-		actualBytes, err := Marshall(instance)
+		actualBytes, err := Marshal(instance)
 
 		expectedBytes := []byte{0x01, 0x03}
 
@@ -146,7 +160,7 @@ func TestMarshal(t *testing.T) {
 		}
 
 		instance := &StructUnderTest{One: 0x01, Two: struct{ Three chan bool }{Three: nil}}
-		_, err := Marshall(instance)
+		_, err := Marshal(instance)
 
 		assert.Error(t, err)
 		assert.True(t, errors.Is(err, UnsupportedType))
@@ -156,7 +170,7 @@ func TestMarshal(t *testing.T) {
 	t.Run("verify the marshal of non struct is little endian", func(t *testing.T) {
 		instance := uint32(0x80010203)
 
-		actualBytes, err := Marshall(instance)
+		actualBytes, err := Marshal(instance)
 		expectedBytes := []byte{0x03, 0x02, 0x01, 0x80}
 
 		assert.NoError(t, err)
@@ -169,7 +183,7 @@ func TestMarshal(t *testing.T) {
 		}
 
 		instance := &StructUnderTest{One: []byte{0x55, 0xaa}}
-		actualBytes, err := Marshall(instance)
+		actualBytes, err := Marshal(instance)
 
 		expectedBytes := []byte{0x55, 0xaa}
 
@@ -183,7 +197,7 @@ func TestMarshal(t *testing.T) {
 		}
 
 		instance := &StructUnderTest{One: [2]byte{0x55, 0xaa}}
-		actualBytes, err := Marshall(instance)
+		actualBytes, err := Marshal(instance)
 
 		expectedBytes := []byte{0x55, 0xaa}
 
@@ -197,7 +211,7 @@ func TestMarshal(t *testing.T) {
 		}
 
 		instance := &StructUnderTest{}
-		_, err := Marshall(instance)
+		_, err := Marshal(instance)
 
 		assert.Error(t, err)
 		assert.True(t, errors.Is(err, UnsupportedType))
@@ -210,7 +224,7 @@ func TestMarshal(t *testing.T) {
 		}
 
 		instance := &StructUnderTest{One: []uint16{0x8001}}
-		actualBytes, err := Marshall(instance)
+		actualBytes, err := Marshal(instance)
 
 		expectedBytes := []byte{0x80, 0x01}
 
@@ -226,7 +240,7 @@ func TestMarshal(t *testing.T) {
 		}
 
 		instance := &StructUnderTest{One: NetworkAddress{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07}}
-		actualBytes, err := Marshall(instance)
+		actualBytes, err := Marshal(instance)
 
 		expectedBytes := []byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07}
 
@@ -240,7 +254,7 @@ func TestMarshal(t *testing.T) {
 		}
 
 		instance := &StructUnderTest{One: []byte{0x55, 0xaa}}
-		actualBytes, err := Marshall(instance)
+		actualBytes, err := Marshal(instance)
 
 		expectedBytes := []byte{0x02, 0x55, 0xaa}
 
@@ -254,7 +268,7 @@ func TestMarshal(t *testing.T) {
 		}
 
 		instance := &StructUnderTest{One: [2]byte{0x55, 0xaa}}
-		actualBytes, err := Marshall(instance)
+		actualBytes, err := Marshal(instance)
 
 		expectedBytes := []byte{0x02, 0x55, 0xaa}
 
@@ -268,7 +282,7 @@ func TestMarshal(t *testing.T) {
 		}
 
 		instance := &StructUnderTest{One: []byte{0x55, 0xaa}}
-		actualBytes, err := Marshall(instance)
+		actualBytes, err := Marshal(instance)
 
 		expectedBytes := []byte{0x00, 0x02, 0x55, 0xaa}
 
@@ -282,7 +296,7 @@ func TestMarshal(t *testing.T) {
 		}
 
 		instance := &StructUnderTest{One: []byte{0x55, 0xaa}}
-		actualBytes, err := Marshall(instance)
+		actualBytes, err := Marshal(instance)
 
 		expectedBytes := []byte{0x02, 0x00, 0x55, 0xaa}
 
@@ -296,7 +310,7 @@ func TestMarshal(t *testing.T) {
 		}
 
 		instance := &StructUnderTest{One: "abc"}
-		actualBytes, err := Marshall(instance)
+		actualBytes, err := Marshal(instance)
 
 		expectedBytes := []byte{0x03, 0x61, 0x62, 0x63}
 
@@ -310,7 +324,7 @@ func TestMarshal(t *testing.T) {
 		}
 
 		instance := &StructUnderTest{One: "abc"}
-		actualBytes, err := Marshall(instance)
+		actualBytes, err := Marshal(instance)
 
 		expectedBytes := []byte{0x00, 0x03, 0x61, 0x62, 0x63}
 
@@ -324,7 +338,7 @@ func TestMarshal(t *testing.T) {
 		}
 
 		instance := &StructUnderTest{One: strings.Repeat("a", 257)}
-		_, err := Marshall(instance)
+		_, err := Marshal(instance)
 
 		assert.Error(t, err)
 	})
@@ -335,7 +349,7 @@ func TestMarshal(t *testing.T) {
 		}
 
 		instance := &StructUnderTest{One: "abc"}
-		actualBytes, err := Marshall(instance)
+		actualBytes, err := Marshal(instance)
 
 		expectedBytes := []byte{0x61, 0x62, 0x63, 0x00}
 
@@ -349,7 +363,7 @@ func TestMarshal(t *testing.T) {
 		}
 
 		instance := &StructUnderTest{One: "abc"}
-		actualBytes, err := Marshall(instance)
+		actualBytes, err := Marshal(instance)
 
 		expectedBytes := []byte{0x61, 0x62, 0x63, 0x00, 0x00, 0x00, 0x00, 0x00}
 
@@ -363,7 +377,7 @@ func TestMarshal(t *testing.T) {
 		}
 
 		instance := &StructUnderTest{One: "abcd"}
-		_, err := Marshall(instance)
+		_, err := Marshal(instance)
 
 		assert.Error(t, err)
 	})

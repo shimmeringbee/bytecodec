@@ -14,7 +14,7 @@ func TestUnmarshall(t *testing.T) {
 
 		var data []byte
 		instance := &StructUnderTest{}
-		err := Unmarshall(data, instance)
+		err := Unmarshal(data, instance)
 
 		assert.Error(t, err)
 		assert.True(t, errors.Is(err, UnsupportedType))
@@ -27,9 +27,24 @@ func TestUnmarshall(t *testing.T) {
 		}
 
 		actualStruct := StructUnderTest{}
-		err := Unmarshall([]byte{0x00}, actualStruct)
+		err := Unmarshal([]byte{0x00}, actualStruct)
 
 		assert.Error(t, err)
+	})
+
+	t.Run("verify bool unmarshals", func(t *testing.T) {
+		type StructUnderTest struct {
+			One bool
+		}
+
+		expectedStruct := StructUnderTest{One: true}
+		data, _ := Marshal(expectedStruct)
+
+		actualStruct := StructUnderTest{}
+		err := Unmarshal(data, &actualStruct)
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedStruct, actualStruct)
 	})
 
 	t.Run("verify byte and uint8 unmarshals", func(t *testing.T) {
@@ -39,10 +54,10 @@ func TestUnmarshall(t *testing.T) {
 		}
 
 		expectedStruct := StructUnderTest{One: 0x55, Two: 0xaa}
-		data, _ := Marshall(expectedStruct)
+		data, _ := Marshal(expectedStruct)
 
 		actualStruct := StructUnderTest{}
-		err := Unmarshall(data, &actualStruct)
+		err := Unmarshal(data, &actualStruct)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedStruct, actualStruct)
@@ -54,10 +69,10 @@ func TestUnmarshall(t *testing.T) {
 		}
 
 		expectedStruct := StructUnderTest{One: 0x8001}
-		data, _ := Marshall(expectedStruct)
+		data, _ := Marshal(expectedStruct)
 
 		actualStruct := StructUnderTest{}
-		err := Unmarshall(data, &actualStruct)
+		err := Unmarshal(data, &actualStruct)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedStruct, actualStruct)
@@ -69,10 +84,10 @@ func TestUnmarshall(t *testing.T) {
 		}
 
 		expectedStruct := StructUnderTest{One: 0x8001}
-		data, _ := Marshall(expectedStruct)
+		data, _ := Marshal(expectedStruct)
 
 		actualStruct := StructUnderTest{}
-		err := Unmarshall(data, &actualStruct)
+		err := Unmarshal(data, &actualStruct)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedStruct, actualStruct)
@@ -84,10 +99,10 @@ func TestUnmarshall(t *testing.T) {
 		}
 
 		expectedStruct := StructUnderTest{One: 0x80010203}
-		data, _ := Marshall(expectedStruct)
+		data, _ := Marshal(expectedStruct)
 
 		actualStruct := StructUnderTest{}
-		err := Unmarshall(data, &actualStruct)
+		err := Unmarshal(data, &actualStruct)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedStruct, actualStruct)
@@ -99,10 +114,10 @@ func TestUnmarshall(t *testing.T) {
 		}
 
 		expectedStruct := StructUnderTest{One: 0x80010203}
-		data, _ := Marshall(expectedStruct)
+		data, _ := Marshal(expectedStruct)
 
 		actualStruct := StructUnderTest{}
-		err := Unmarshall(data, &actualStruct)
+		err := Unmarshal(data, &actualStruct)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedStruct, actualStruct)
@@ -114,10 +129,10 @@ func TestUnmarshall(t *testing.T) {
 		}
 
 		expectedStruct := StructUnderTest{One: 0x8001020304050607}
-		data, _ := Marshall(expectedStruct)
+		data, _ := Marshal(expectedStruct)
 
 		actualStruct := StructUnderTest{}
-		err := Unmarshall(data, &actualStruct)
+		err := Unmarshal(data, &actualStruct)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedStruct, actualStruct)
@@ -129,10 +144,10 @@ func TestUnmarshall(t *testing.T) {
 		}
 
 		expectedStruct := StructUnderTest{One: 0x8001020304050607}
-		data, _ := Marshall(expectedStruct)
+		data, _ := Marshal(expectedStruct)
 
 		actualStruct := StructUnderTest{}
-		err := Unmarshall(data, &actualStruct)
+		err := Unmarshal(data, &actualStruct)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedStruct, actualStruct)
@@ -147,10 +162,10 @@ func TestUnmarshall(t *testing.T) {
 		}
 
 		expectedStruct := &StructUnderTest{One: 0x01, Two: struct{ Three uint8 }{Three: 0x03}}
-		data, _ := Marshall(expectedStruct)
+		data, _ := Marshal(expectedStruct)
 
 		actualStruct := &StructUnderTest{}
-		err := Unmarshall(data, actualStruct)
+		err := Unmarshal(data, actualStruct)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedStruct, actualStruct)
@@ -167,7 +182,7 @@ func TestUnmarshall(t *testing.T) {
 		data := []byte{0x00, 0x01}
 
 		actualStruct := StructUnderTest{}
-		err := Unmarshall(data, &actualStruct)
+		err := Unmarshal(data, &actualStruct)
 
 		assert.Error(t, err)
 		assert.True(t, errors.Is(err, UnsupportedType))
@@ -177,10 +192,10 @@ func TestUnmarshall(t *testing.T) {
 	t.Run("verify the unmarshal of non struct is little endian", func(t *testing.T) {
 		expectedStruct := uint32(0x80010203)
 
-		data, _ := Marshall(expectedStruct)
+		data, _ := Marshal(expectedStruct)
 
 		actualStruct := uint32(0)
-		err := Unmarshall(data, &actualStruct)
+		err := Unmarshal(data, &actualStruct)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedStruct, actualStruct)
@@ -192,10 +207,10 @@ func TestUnmarshall(t *testing.T) {
 		}
 
 		expectedStruct := &StructUnderTest{One: []byte{0x55, 0xaa}}
-		data, _ := Marshall(expectedStruct)
+		data, _ := Marshal(expectedStruct)
 
 		actualStruct := &StructUnderTest{}
-		err := Unmarshall(data, actualStruct)
+		err := Unmarshal(data, actualStruct)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedStruct, actualStruct)
@@ -208,10 +223,10 @@ func TestUnmarshall(t *testing.T) {
 		}
 
 		expectedStruct := &StructUnderTest{One: [2]byte{0x55, 0xaa}, Two: 0x02}
-		data, _ := Marshall(expectedStruct)
+		data, _ := Marshal(expectedStruct)
 
 		actualStruct := &StructUnderTest{}
-		err := Unmarshall(data, actualStruct)
+		err := Unmarshal(data, actualStruct)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedStruct, actualStruct)
@@ -224,7 +239,7 @@ func TestUnmarshall(t *testing.T) {
 
 		instance := &StructUnderTest{}
 		var data []byte
-		err := Unmarshall(data, instance)
+		err := Unmarshal(data, instance)
 
 		assert.Error(t, err)
 		assert.True(t, errors.Is(err, UnsupportedType))
@@ -237,10 +252,10 @@ func TestUnmarshall(t *testing.T) {
 		}
 
 		expectedStruct := &StructUnderTest{One: []uint16{0x8001}}
-		data, _ := Marshall(expectedStruct)
+		data, _ := Marshal(expectedStruct)
 
 		actualStruct := &StructUnderTest{}
-		err := Unmarshall(data, actualStruct)
+		err := Unmarshal(data, actualStruct)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedStruct, actualStruct)
@@ -254,10 +269,10 @@ func TestUnmarshall(t *testing.T) {
 		}
 
 		expectedStruct := &StructUnderTest{One: NetworkAddress{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07}}
-		data, _ := Marshall(expectedStruct)
+		data, _ := Marshal(expectedStruct)
 
 		actualStruct := &StructUnderTest{}
-		err := Unmarshall(data, actualStruct)
+		err := Unmarshal(data, actualStruct)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedStruct, actualStruct)
@@ -269,10 +284,10 @@ func TestUnmarshall(t *testing.T) {
 		}
 
 		expectedStruct := &StructUnderTest{One: []byte{0x55, 0xaa}}
-		data, _ := Marshall(expectedStruct)
+		data, _ := Marshal(expectedStruct)
 
 		actualStruct := &StructUnderTest{}
-		err := Unmarshall(data, actualStruct)
+		err := Unmarshal(data, actualStruct)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedStruct, actualStruct)
@@ -284,10 +299,10 @@ func TestUnmarshall(t *testing.T) {
 		}
 
 		expectedStruct := &StructUnderTest{One: [2]byte{0x55, 0xaa}}
-		data, _ := Marshall(expectedStruct)
+		data, _ := Marshal(expectedStruct)
 
 		actualStruct := &StructUnderTest{}
-		err := Unmarshall(data, actualStruct)
+		err := Unmarshal(data, actualStruct)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedStruct, actualStruct)
@@ -299,10 +314,10 @@ func TestUnmarshall(t *testing.T) {
 		}
 
 		expectedStruct := &StructUnderTest{One: []byte{0x55, 0xaa}}
-		data, _ := Marshall(expectedStruct)
+		data, _ := Marshal(expectedStruct)
 
 		actualStruct := &StructUnderTest{}
-		err := Unmarshall(data, actualStruct)
+		err := Unmarshal(data, actualStruct)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedStruct, actualStruct)
@@ -314,10 +329,10 @@ func TestUnmarshall(t *testing.T) {
 		}
 
 		expectedStruct := &StructUnderTest{One: []byte{0x55, 0xaa}}
-		data, _ := Marshall(expectedStruct)
+		data, _ := Marshal(expectedStruct)
 
 		actualStruct := &StructUnderTest{}
-		err := Unmarshall(data, actualStruct)
+		err := Unmarshal(data, actualStruct)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedStruct, actualStruct)
@@ -329,10 +344,10 @@ func TestUnmarshall(t *testing.T) {
 		}
 
 		expectedStruct := &StructUnderTest{One: "abc"}
-		data, _ := Marshall(expectedStruct)
+		data, _ := Marshal(expectedStruct)
 
 		actualStruct := &StructUnderTest{}
-		err := Unmarshall(data, actualStruct)
+		err := Unmarshal(data, actualStruct)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedStruct, actualStruct)
@@ -344,10 +359,10 @@ func TestUnmarshall(t *testing.T) {
 		}
 
 		expectedStruct := &StructUnderTest{One: "abc"}
-		data, _ := Marshall(expectedStruct)
+		data, _ := Marshal(expectedStruct)
 
 		actualStruct := &StructUnderTest{}
-		err := Unmarshall(data, actualStruct)
+		err := Unmarshal(data, actualStruct)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedStruct, actualStruct)
@@ -359,10 +374,10 @@ func TestUnmarshall(t *testing.T) {
 		}
 
 		expectedStruct := &StructUnderTest{One: "abc"}
-		data, _ := Marshall(expectedStruct)
+		data, _ := Marshal(expectedStruct)
 
 		actualStruct := &StructUnderTest{}
-		err := Unmarshall(data, actualStruct)
+		err := Unmarshal(data, actualStruct)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedStruct, actualStruct)
@@ -375,10 +390,10 @@ func TestUnmarshall(t *testing.T) {
 		}
 
 		expectedStruct := &StructUnderTest{One: "abc", Two: 0x80}
-		data, _ := Marshall(expectedStruct)
+		data, _ := Marshal(expectedStruct)
 
 		actualStruct := &StructUnderTest{}
-		err := Unmarshall(data, actualStruct)
+		err := Unmarshal(data, actualStruct)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedStruct, actualStruct)
@@ -392,7 +407,7 @@ func TestUnmarshall(t *testing.T) {
 		data := []byte{0x61, 0x62, 0x63, 0x64}
 
 		actualStruct := &StructUnderTest{}
-		err := Unmarshall(data, actualStruct)
+		err := Unmarshal(data, actualStruct)
 
 		assert.Error(t, err)
 	})

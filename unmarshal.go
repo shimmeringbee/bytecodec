@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-func Unmarshall(data []byte, v interface{}) (err error) {
+func Unmarshal(data []byte, v interface{}) (err error) {
 	bb := bytes.NewBuffer(data)
 
 	val := reflect.Indirect(reflect.ValueOf(v))
@@ -32,14 +32,16 @@ func unmarshalValue(bb *bytes.Buffer, name string, value reflect.Value, tags ref
 	endian := tagEndianness(tags)
 
 	switch kind {
+	case reflect.Bool:
+		err = unmarshalBool(bb, endian, value)
 	case reflect.Uint8:
-		err = unmarshallUint(bb, endian, 1, value)
+		err = unmarshalUint(bb, endian, 1, value)
 	case reflect.Uint16:
-		err = unmarshallUint(bb, endian, 2, value)
+		err = unmarshalUint(bb, endian, 2, value)
 	case reflect.Uint32:
-		err = unmarshallUint(bb, endian, 4, value)
+		err = unmarshalUint(bb, endian, 4, value)
 	case reflect.Uint64:
-		err = unmarshallUint(bb, endian, 8, value)
+		err = unmarshalUint(bb, endian, 8, value)
 	case reflect.Struct:
 		err = unmarshalStruct(bb, value)
 	case reflect.Array:
@@ -72,7 +74,19 @@ func unmarshalStruct(bb *bytes.Buffer, value reflect.Value) error {
 	return nil
 }
 
-func unmarshallUint(bb *bytes.Buffer, endian EndianTag, size uint8, value reflect.Value) error {
+func unmarshalBool(bb *bytes.Buffer, endian EndianTag, value reflect.Value) error {
+	readValue, err := readUintFromBuffer(bb, endian, 1)
+
+	if err != nil {
+		return err
+	}
+
+	value.SetBool(readValue > 0)
+
+	return nil
+}
+
+func unmarshalUint(bb *bytes.Buffer, endian EndianTag, size uint8, value reflect.Value) error {
 	readValue, err := readUintFromBuffer(bb, endian, size)
 
 	if err != nil {

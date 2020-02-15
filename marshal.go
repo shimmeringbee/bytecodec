@@ -10,7 +10,7 @@ import (
 
 var UnsupportedType = errors.New("unsupported type")
 
-func Marshall(v interface{}) ([]byte, error) {
+func Marshal(v interface{}) ([]byte, error) {
 	bb := bytes.Buffer{}
 
 	val := reflect.Indirect(reflect.ValueOf(v))
@@ -45,14 +45,16 @@ func marshalValue(bb *bytes.Buffer, name string, value reflect.Value, tags refle
 	endian := tagEndianness(tags)
 
 	switch kind {
+	case reflect.Bool:
+		marshalBool(bb, endian, value.Bool())
 	case reflect.Uint8:
-		marshallUint(bb, endian, 1, value.Uint())
+		marshalUint(bb, endian, 1, value.Uint())
 	case reflect.Uint16:
-		marshallUint(bb, endian, 2, value.Uint())
+		marshalUint(bb, endian, 2, value.Uint())
 	case reflect.Uint32:
-		marshallUint(bb, endian, 4, value.Uint())
+		marshalUint(bb, endian, 4, value.Uint())
 	case reflect.Uint64:
-		marshallUint(bb, endian, 8, value.Uint())
+		marshalUint(bb, endian, 8, value.Uint())
 	case reflect.Struct:
 		err = marshalStruct(bb, value)
 	case reflect.Array, reflect.Slice:
@@ -73,7 +75,7 @@ func marshalArrayOrSlice(bb *bytes.Buffer, value reflect.Value, tags reflect.Str
 	}
 
 	if length.HasLength() {
-		marshallUint(bb, length.Endian, length.Size, uint64(value.Len()))
+		marshalUint(bb, length.Endian, length.Size, uint64(value.Len()))
 	}
 
 	for i := 0; i < value.Len(); i++ {
@@ -113,14 +115,24 @@ func marshalString(bb *bytes.Buffer, value reflect.Value, tags reflect.StructTag
 			return fmt.Errorf("string too large to be represented by prefixed length")
 		}
 
-		marshallUint(bb, stringTag.Endian, (stringTag.Size+7)/8, uint64(stringLength))
+		marshalUint(bb, stringTag.Endian, (stringTag.Size+7)/8, uint64(stringLength))
 		bb.WriteString(value.String())
 	}
 
 	return nil
 }
 
-func marshallUint(bb *bytes.Buffer, endian EndianTag, size uint8, value uint64) {
+func marshalBool(bb *bytes.Buffer, endian EndianTag, value bool) {
+	byteValue := 0x00
+
+	if value {
+		byteValue = 0x01
+	}
+
+	bb.WriteByte(byte(byteValue))
+}
+
+func marshalUint(bb *bytes.Buffer, endian EndianTag, size uint8, value uint64) {
 	switch endian {
 	case BigEndian:
 		for i := uint8(0); i < size; i++ {
