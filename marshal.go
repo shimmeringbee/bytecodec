@@ -114,11 +114,18 @@ func marshalString(bb *bitbuffer.BitBuffer, value reflect.Value, tags reflect.St
 			return fmt.Errorf("string too large to fit in padding allocated")
 		}
 
-		bb.WriteString(value.String())
-		bb.WriteByte(0)
+		if err := bb.WriteString(value.String()); err != nil {
+			return err
+		}
+
+		if err := bb.WriteByte(0); err != nil {
+			return err
+		}
 
 		for i := 0; i < int(stringTag.Size)-(stringLength+1); i++ {
-			bb.WriteByte(0)
+			if err := bb.WriteByte(0); err != nil {
+				return err
+			}
 		}
 	} else {
 		maxSize := int(math.Pow(2, float64(stringTag.Size)))
@@ -127,8 +134,13 @@ func marshalString(bb *bitbuffer.BitBuffer, value reflect.Value, tags reflect.St
 			return fmt.Errorf("string too large to be represented by prefixed length")
 		}
 
-		marshalUint(bb, stringTag.Endian, int(stringTag.Size), uint64(stringLength))
-		bb.WriteString(value.String())
+		if err := marshalUint(bb, stringTag.Endian, int(stringTag.Size), uint64(stringLength)); err != nil {
+			return err
+		}
+
+		if err := bb.WriteString(value.String()); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -152,7 +164,9 @@ func marshalUint(bb *bitbuffer.BitBuffer, endian EndianTag, bitSize int, value u
 	}
 
 	if bitSize < 8 {
-		bb.WriteBits(byte(value), bitSize)
+		if err := bb.WriteBits(byte(value), bitSize); err != nil {
+			return err
+		}
 	} else {
 		size := (bitSize + 7) / 8
 
@@ -164,12 +178,17 @@ func marshalUint(bb *bitbuffer.BitBuffer, endian EndianTag, bitSize int, value u
 		case BigEndian:
 			for i := 0; i < size; i++ {
 				shiftOffset := (size - i - 1) * 8
-				bb.WriteByte(byte(value >> shiftOffset))
+
+				if err := bb.WriteByte(byte(value >> shiftOffset)); err != nil {
+					return err
+				}
 			}
 		case LittleEndian:
 			for i := 0; i < size; i++ {
 				shiftOffset := i * 8
-				bb.WriteByte(byte(value >> shiftOffset))
+				if err := bb.WriteByte(byte(value >> shiftOffset)); err != nil {
+					return err
+				}
 			}
 		}
 	}
