@@ -65,4 +65,26 @@ func Test_BitBuffer(t *testing.T) {
 		assert.Equal(t, byte(0x02), two)
 		assert.Equal(t, byte(0xaa), three)
 	})
+
+	t.Run("writing a string", func(t *testing.T) {
+		bb := NewBitBuffer()
+
+		bb.WriteString("Hi")
+
+		actualBytes := bb.Bytes()
+		expectedBytes := []byte{0x48, 0x69}
+
+		assert.Equal(t, expectedBytes, actualBytes)
+	})
+
+	t.Run("writing a unicode string", func(t *testing.T) {
+		bb := NewBitBuffer()
+
+		bb.WriteString("🤬")
+
+		actualBytes := bb.Bytes()
+		expectedBytes := []byte{0xf0, 0x9f, 0xa4, 0xac}
+
+		assert.Equal(t, expectedBytes, actualBytes)
+	})
 }

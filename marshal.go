@@ -1,9 +1,9 @@
 package bytecodec
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
+	"github.com/shimmeringbee/bytecodec/bitbuffer"
 	"math"
 	"reflect"
 )
@@ -11,18 +11,18 @@ import (
 var UnsupportedType = errors.New("unsupported type")
 
 func Marshal(v interface{}) ([]byte, error) {
-	bb := bytes.Buffer{}
+	bb := bitbuffer.NewBitBuffer()
 
 	val := reflect.Indirect(reflect.ValueOf(v))
 
-	if err := marshalValue(&bb, "root", val, val, val, ""); err != nil {
+	if err := marshalValue(bb, "root", val, val, val, ""); err != nil {
 		return nil, err
 	}
 
 	return bb.Bytes(), nil
 }
 
-func marshalValue(bb *bytes.Buffer, name string, value reflect.Value, root reflect.Value, parent reflect.Value, tags reflect.StructTag) (err error) {
+func marshalValue(bb *bitbuffer.BitBuffer, name string, value reflect.Value, root reflect.Value, parent reflect.Value, tags reflect.StructTag) (err error) {
 	kind := value.Kind()
 
 	endian := tagEndianness(tags)
@@ -55,7 +55,7 @@ func marshalValue(bb *bytes.Buffer, name string, value reflect.Value, root refle
 	return
 }
 
-func marshalStruct(bb *bytes.Buffer, structValue reflect.Value, root reflect.Value) error {
+func marshalStruct(bb *bitbuffer.BitBuffer, structValue reflect.Value, root reflect.Value) error {
 	structType := structValue.Type()
 
 	for i := 0; i < structValue.NumField(); i++ {
@@ -72,7 +72,7 @@ func marshalStruct(bb *bytes.Buffer, structValue reflect.Value, root reflect.Val
 	return nil
 }
 
-func marshalArrayOrSlice(bb *bytes.Buffer, value reflect.Value, root reflect.Value, parent reflect.Value, tags reflect.StructTag) error {
+func marshalArrayOrSlice(bb *bitbuffer.BitBuffer, value reflect.Value, root reflect.Value, parent reflect.Value, tags reflect.StructTag) error {
 	length, err := tagLength(tags)
 	if err != nil {
 		return err
@@ -92,7 +92,7 @@ func marshalArrayOrSlice(bb *bytes.Buffer, value reflect.Value, root reflect.Val
 	return nil
 }
 
-func marshalString(bb *bytes.Buffer, value reflect.Value, tags reflect.StructTag) error {
+func marshalString(bb *bitbuffer.BitBuffer, value reflect.Value, tags reflect.StructTag) error {
 	stringTag, err := tagString(tags)
 	if err != nil {
 		return err
@@ -126,7 +126,7 @@ func marshalString(bb *bytes.Buffer, value reflect.Value, tags reflect.StructTag
 	return nil
 }
 
-func marshalBool(bb *bytes.Buffer, endian EndianTag, value bool) {
+func marshalBool(bb *bitbuffer.BitBuffer, endian EndianTag, value bool) {
 	byteValue := 0x00
 
 	if value {
@@ -136,7 +136,7 @@ func marshalBool(bb *bytes.Buffer, endian EndianTag, value bool) {
 	bb.WriteByte(byte(byteValue))
 }
 
-func marshalUint(bb *bytes.Buffer, endian EndianTag, size uint8, value uint64) {
+func marshalUint(bb *bitbuffer.BitBuffer, endian EndianTag, size uint8, value uint64) {
 	switch endian {
 	case BigEndian:
 		for i := uint8(0); i < size; i++ {

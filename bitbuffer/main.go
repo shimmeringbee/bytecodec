@@ -34,6 +34,18 @@ func (bb *BitBuffer) Bytes() []byte {
 	return bb.buf.Bytes()
 }
 
+func (bb *BitBuffer) WriteString(data string) error {
+	dataBytes := []byte(data)
+
+	for _, b := range dataBytes {
+		if err := bb.WriteByte(b); err != nil {
+			return nil
+		}
+	}
+
+	return nil
+}
+
 func (bb *BitBuffer) ReadByte() (byte, error) {
 	return bb.ReadBits(8)
 }

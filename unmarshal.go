@@ -1,9 +1,9 @@
 package bytecodec
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
+	"github.com/shimmeringbee/bytecodec/bitbuffer"
 	"io"
 	"math"
 	"reflect"
@@ -11,7 +11,7 @@ import (
 )
 
 func Unmarshal(data []byte, v interface{}) (err error) {
-	bb := bytes.NewBuffer(data)
+	bb := bitbuffer.NewBitBufferFromBytes(data)
 
 	val := reflect.Indirect(reflect.ValueOf(v))
 
@@ -26,7 +26,7 @@ func Unmarshal(data []byte, v interface{}) (err error) {
 	return
 }
 
-func unmarshalValue(bb *bytes.Buffer, name string, value reflect.Value, root reflect.Value, parent reflect.Value, tags reflect.StructTag) (err error) {
+func unmarshalValue(bb *bitbuffer.BitBuffer, name string, value reflect.Value, root reflect.Value, parent reflect.Value, tags reflect.StructTag) (err error) {
 	kind := value.Kind()
 
 	endian := tagEndianness(tags)
@@ -61,7 +61,7 @@ func unmarshalValue(bb *bytes.Buffer, name string, value reflect.Value, root ref
 	return
 }
 
-func unmarshalStruct(bb *bytes.Buffer, structValue reflect.Value, root reflect.Value) error {
+func unmarshalStruct(bb *bitbuffer.BitBuffer, structValue reflect.Value, root reflect.Value) error {
 	structType := structValue.Type()
 
 	for i := 0; i < structValue.NumField(); i++ {
@@ -78,7 +78,7 @@ func unmarshalStruct(bb *bytes.Buffer, structValue reflect.Value, root reflect.V
 	return nil
 }
 
-func unmarshalBool(bb *bytes.Buffer, endian EndianTag, value reflect.Value) error {
+func unmarshalBool(bb *bitbuffer.BitBuffer, endian EndianTag, value reflect.Value) error {
 	readValue, err := readUintFromBuffer(bb, endian, 1)
 
 	if err != nil {
@@ -90,7 +90,7 @@ func unmarshalBool(bb *bytes.Buffer, endian EndianTag, value reflect.Value) erro
 	return nil
 }
 
-func unmarshalUint(bb *bytes.Buffer, endian EndianTag, size uint8, value reflect.Value) error {
+func unmarshalUint(bb *bitbuffer.BitBuffer, endian EndianTag, size uint8, value reflect.Value) error {
 	readValue, err := readUintFromBuffer(bb, endian, size)
 
 	if err != nil {
@@ -101,7 +101,7 @@ func unmarshalUint(bb *bytes.Buffer, endian EndianTag, size uint8, value reflect
 	return nil
 }
 
-func readUintFromBuffer(bb *bytes.Buffer, endian EndianTag, size uint8) (uint64, error) {
+func readUintFromBuffer(bb *bitbuffer.BitBuffer, endian EndianTag, size uint8) (uint64, error) {
 	readValue := uint64(0)
 
 	switch endian {
@@ -130,7 +130,7 @@ func readUintFromBuffer(bb *bytes.Buffer, endian EndianTag, size uint8) (uint64,
 	return readValue, nil
 }
 
-func unmarshalArray(bb *bytes.Buffer, value reflect.Value, root reflect.Value, parent reflect.Value, tags reflect.StructTag) error {
+func unmarshalArray(bb *bitbuffer.BitBuffer, value reflect.Value, root reflect.Value, parent reflect.Value, tags reflect.StructTag) error {
 	arraySize, err := readArraySliceLength(bb, tags, value.Len())
 	if err != nil {
 		return err
@@ -146,7 +146,7 @@ func unmarshalArray(bb *bytes.Buffer, value reflect.Value, root reflect.Value, p
 	return nil
 }
 
-func unmarshalSlice(bb *bytes.Buffer, value reflect.Value, root reflect.Value, parent reflect.Value, tags reflect.StructTag) error {
+func unmarshalSlice(bb *bitbuffer.BitBuffer, value reflect.Value, root reflect.Value, parent reflect.Value, tags reflect.StructTag) error {
 	sliceSize, err := readArraySliceLength(bb, tags, math.MaxInt64)
 	if err != nil {
 		return err
@@ -172,7 +172,7 @@ func unmarshalSlice(bb *bytes.Buffer, value reflect.Value, root reflect.Value, p
 	return nil
 }
 
-func readArraySliceLength(bb *bytes.Buffer, tags reflect.StructTag, max int) (int, error) {
+func readArraySliceLength(bb *bitbuffer.BitBuffer, tags reflect.StructTag, max int) (int, error) {
 	length, err := tagLength(tags)
 	if err != nil {
 		return 0, err
@@ -190,7 +190,7 @@ func readArraySliceLength(bb *bytes.Buffer, tags reflect.StructTag, max int) (in
 	}
 }
 
-func unmarshalString(bb *bytes.Buffer, value reflect.Value, tags reflect.StructTag) error {
+func unmarshalString(bb *bitbuffer.BitBuffer, value reflect.Value, tags reflect.StructTag) error {
 	stringTag, err := tagString(tags)
 	if err != nil {
 		return err
