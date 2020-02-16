@@ -430,4 +430,79 @@ func TestUnmarshall(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, expectedStruct, actualStruct)
 	})
+
+	t.Run("unmarshalling two 3 bit uints", func(t *testing.T) {
+		type StructUnderTest struct {
+			One uint8 `bcfieldwidth:"3"`
+			Two uint8 `bcfieldwidth:"3"`
+		}
+
+		expectedStruct := &StructUnderTest{One: 0b101, Two: 0b101}
+		data, _ := Marshal(expectedStruct)
+
+		actualStruct := &StructUnderTest{}
+		err := Unmarshal(data, actualStruct)
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedStruct, actualStruct)
+	})
+
+	t.Run("writing a multibyte integer which is not a standard size", func(t *testing.T) {
+		type StructUnderTest struct {
+			One uint32 `bcfieldwidth:"24"`
+		}
+
+		expectedStruct := &StructUnderTest{One: 0x00aabbcc}
+		data, _ := Marshal(expectedStruct)
+
+		actualStruct := &StructUnderTest{}
+		err := Unmarshal(data, actualStruct)
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedStruct, actualStruct)
+	})
+
+	t.Run("an error is thrown when a non byte aligned width over 8 bits is requested", func(t *testing.T) {
+		type StructUnderTest struct {
+			One uint8 `bcfieldwidth:"9"`
+		}
+
+		instance := &StructUnderTest{One: 0}
+		err := Unmarshal([]byte{}, instance)
+
+		assert.Error(t, err)
+	})
+
+	t.Run("two 1 bit bools and a 6 bit uint are read", func(t *testing.T) {
+		type StructUnderTest struct {
+			One   bool  `bcfieldwidth:"1"`
+			Two   bool  `bcfieldwidth:"1"`
+			Three uint8 `bcfieldwidth:"6"`
+		}
+
+		expectedStruct := &StructUnderTest{One: true, Two: true, Three: 0x2d}
+		data, _ := Marshal(expectedStruct)
+
+		actualStruct := &StructUnderTest{}
+		err := Unmarshal(data, actualStruct)
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedStruct, actualStruct)
+	})
+
+	t.Run("6 bit uint, array with 2 bit prefix are read", func(t *testing.T) {
+		type StructUnderTest struct {
+			One uint8  `bcfieldwidth:"6"`
+			Two []byte `bcsliceprefix:"2"`
+		}
+
+		expectedStruct := &StructUnderTest{One: 0x2d, Two: []byte{0x00, 0x01}}
+		data, _ := Marshal(expectedStruct)
+
+		actualStruct := &StructUnderTest{}
+		err := Unmarshal(data, actualStruct)
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedStruct, actualStruct)
+	})
 }

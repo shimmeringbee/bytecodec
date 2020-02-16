@@ -35,17 +35,23 @@ func unmarshalValue(bb *bitbuffer.BitBuffer, name string, value reflect.Value, r
 		return err
 	}
 
+	fieldWidth, err := tagFieldWidth(tags)
+
+	if err != nil {
+		return
+	}
+
 	switch kind {
 	case reflect.Bool:
-		err = unmarshalBool(bb, endian, value)
+		err = unmarshalBool(bb, endian, fieldWidth.Width(8), value)
 	case reflect.Uint8:
-		err = unmarshalUint(bb, endian, 8, value)
+		err = unmarshalUint(bb, endian, fieldWidth.Width(8), value)
 	case reflect.Uint16:
-		err = unmarshalUint(bb, endian, 16, value)
+		err = unmarshalUint(bb, endian, fieldWidth.Width(16), value)
 	case reflect.Uint32:
-		err = unmarshalUint(bb, endian, 32, value)
+		err = unmarshalUint(bb, endian, fieldWidth.Width(32), value)
 	case reflect.Uint64:
-		err = unmarshalUint(bb, endian, 64, value)
+		err = unmarshalUint(bb, endian, fieldWidth.Width(64), value)
 	case reflect.Struct:
 		err = unmarshalStruct(bb, value, root)
 	case reflect.Array:
@@ -78,8 +84,8 @@ func unmarshalStruct(bb *bitbuffer.BitBuffer, structValue reflect.Value, root re
 	return nil
 }
 
-func unmarshalBool(bb *bitbuffer.BitBuffer, endian EndianTag, value reflect.Value) error {
-	readValue, err := readUintFromBuffer(bb, endian, 1)
+func unmarshalBool(bb *bitbuffer.BitBuffer, endian EndianTag, bitSize int, value reflect.Value) error {
+	readValue, err := readUintFromBuffer(bb, endian, bitSize)
 
 	if err != nil {
 		return err
@@ -90,7 +96,7 @@ func unmarshalBool(bb *bitbuffer.BitBuffer, endian EndianTag, value reflect.Valu
 	return nil
 }
 
-func unmarshalUint(bb *bitbuffer.BitBuffer, endian EndianTag, size uint8, value reflect.Value) error {
+func unmarshalUint(bb *bitbuffer.BitBuffer, endian EndianTag, size int, value reflect.Value) error {
 	readValue, err := readUintFromBuffer(bb, endian, size)
 
 	if err != nil {
@@ -101,35 +107,44 @@ func unmarshalUint(bb *bitbuffer.BitBuffer, endian EndianTag, size uint8, value 
 	return nil
 }
 
-func readUintFromBuffer(bb *bitbuffer.BitBuffer, endian EndianTag, bitSize uint8) (uint64, error) {
-	size := (bitSize + 7) / 8
+func readUintFromBuffer(bb *bitbuffer.BitBuffer, endian EndianTag, bitSize int) (uint64, error) {
+	if bitSize < 8 {
+		data, err := bb.ReadBits(bitSize)
+		return uint64(data), err
+	} else {
+		size := (bitSize + 7) / 8
 
-	readValue := uint64(0)
-
-	switch endian {
-	case BigEndian:
-		for i := uint8(0); i < size; i++ {
-			readByte, err := bb.ReadByte()
-			if err != nil {
-				return 0, err
-			}
-
-			shiftOffset := (size - i - 1) * 8
-			readValue |= uint64(readByte) << shiftOffset
+		if (size * 8) != bitSize {
+			return 0, fmt.Errorf("unable to handle arbitary bit widths > 8 bits, %d requested", bitSize)
 		}
-	case LittleEndian:
-		for i := uint8(0); i < size; i++ {
-			readByte, err := bb.ReadByte()
-			if err != nil {
-				return 0, err
-			}
 
-			shiftOffset := i * 8
-			readValue |= uint64(readByte) << shiftOffset
+		readValue := uint64(0)
+
+		switch endian {
+		case BigEndian:
+			for i := 0; i < size; i++ {
+				readByte, err := bb.ReadByte()
+				if err != nil {
+					return 0, err
+				}
+
+				shiftOffset := (size - i - 1) * 8
+				readValue |= uint64(readByte) << shiftOffset
+			}
+		case LittleEndian:
+			for i := 0; i < size; i++ {
+				readByte, err := bb.ReadByte()
+				if err != nil {
+					return 0, err
+				}
+
+				shiftOffset := i * 8
+				readValue |= uint64(readByte) << shiftOffset
+			}
 		}
+
+		return readValue, nil
 	}
-
-	return readValue, nil
 }
 
 func unmarshalArray(bb *bitbuffer.BitBuffer, value reflect.Value, root reflect.Value, parent reflect.Value, tags reflect.StructTag) error {
@@ -181,7 +196,7 @@ func readArraySliceLength(bb *bitbuffer.BitBuffer, tags reflect.StructTag, max i
 	}
 
 	if length.HasPrefix() {
-		readSize, err := readUintFromBuffer(bb, length.Endian, length.Size)
+		readSize, err := readUintFromBuffer(bb, length.Endian, int(length.Size))
 		if err != nil {
 			return 0, err
 		}
@@ -237,7 +252,7 @@ func unmarshalString(bb *bitbuffer.BitBuffer, value reflect.Value, tags reflect.
 		}
 
 	} else {
-		stringLength, err := readUintFromBuffer(bb, stringTag.Endian, stringTag.Size)
+		stringLength, err := readUintFromBuffer(bb, stringTag.Endian, int(stringTag.Size))
 		if err != nil {
 			return err
 		}
