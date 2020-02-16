@@ -6,8 +6,25 @@ import (
 	"strings"
 )
 
-const BigEndianKeyword string = "big"
-const NullTerminationKeyword string = "null"
+type EndianTag uint8
+
+type StringTermination uint8
+
+const (
+	BigEndian    EndianTag = 0
+	LittleEndian EndianTag = 1
+
+	Prefix StringTermination = 0
+	Null   StringTermination = 1
+
+	TagEndian      = "bcendian"
+	TagSlicePrefix = "bcsliceprefix"
+	TagStringType  = "bcstringtype"
+	TagIncludeIf   = "bcincludeif"
+
+	BigEndianKeyword       = "big"
+	NullTerminationKeyword = "null"
+)
 
 func tagEndianness(tag reflect.StructTag) EndianTag {
 	if tag.Get(TagEndian) == BigEndianKeyword {

@@ -5,23 +5,6 @@ import (
 	"reflect"
 )
 
-type EndianTag uint8
-
-type StringTermination uint8
-
-const (
-	BigEndian    EndianTag = 0
-	LittleEndian EndianTag = 1
-
-	Prefix StringTermination = 0
-	Null   StringTermination = 1
-
-	TagEndian      = "bcendian"
-	TagSlicePrefix = "bcsliceprefix"
-	TagStringType  = "bcstringtype"
-	TagIncludeIf   = "bcincludeif"
-)
-
 func shouldIgnore(tags reflect.StructTag, root reflect.Value, parent reflect.Value) (bool, error) {
 	includeIf, err := tagIncludeIf(tags)
 
