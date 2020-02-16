@@ -29,6 +29,8 @@ import "github.com/shimmeringbee/bytecodec"
 
 ## Usage
 
+**This libraries API is unstable and should not yet be relied upon.**
+
 ### Marshalling
 
 Marshalling assumes integers should be expressed as little endian, unless overridden.
