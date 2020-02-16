@@ -200,3 +200,33 @@ func TestTagsIncludeIf(t *testing.T) {
 		assert.NoError(t, err)
 	})
 }
+
+func TestFieldWidthTag(t *testing.T) {
+	t.Run("missing tag passes default width through", func(t *testing.T) {
+		actualValue, err := tagFieldWidth(``)
+
+		assert.NoError(t, err)
+		assert.True(t, actualValue.Default)
+
+		expectedValue := 16
+
+		assert.Equal(t, expectedValue, actualValue.Width(expectedValue))
+	})
+
+	t.Run("provided tag overrides default width", func(t *testing.T) {
+		actualValue, err := tagFieldWidth(`bcfieldwidth:"15"`)
+
+		assert.NoError(t, err)
+		assert.False(t, actualValue.Default)
+
+		expectedValue := 15
+
+		assert.Equal(t, expectedValue, actualValue.Width(8))
+	})
+
+	t.Run("tag with invalid bit count errors", func(t *testing.T) {
+		_, err := tagFieldWidth(`bcfieldwidth:"SPOON"`)
+
+		assert.Error(t, err)
+	})
+}

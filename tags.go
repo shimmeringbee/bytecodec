@@ -21,6 +21,7 @@ const (
 	TagSlicePrefix = "bcsliceprefix"
 	TagStringType  = "bcstringtype"
 	TagIncludeIf   = "bcincludeif"
+	TagFieldWidth  = "bcfieldwidth"
 
 	BigEndianKeyword       = "big"
 	NullTerminationKeyword = "null"
@@ -162,4 +163,37 @@ func tagIncludeIf(tag reflect.StructTag) (i IncludeIfTag, err error) {
 
 func (i IncludeIfTag) HasIncludeIf() bool {
 	return len(i.FieldPath) > 0
+}
+
+type FieldWidthTag struct {
+	Default  bool
+	BitWidth int
+}
+
+func (t FieldWidthTag) Width(defaultWidth int) int {
+	if t.Default {
+		return defaultWidth
+	} else {
+		return t.BitWidth
+	}
+}
+
+func tagFieldWidth(tag reflect.StructTag) (t FieldWidthTag, err error) {
+	rawTag := tag.Get(TagFieldWidth)
+
+	if rawTag == "" {
+		t.Default = true
+	} else {
+		t.Default = false
+
+		width, err := strconv.ParseInt(rawTag, 10, 8)
+
+		if err != nil {
+			return t, err
+		}
+
+		t.BitWidth = int(width)
+	}
+
+	return
 }
