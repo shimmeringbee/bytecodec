@@ -31,17 +31,23 @@ func marshalValue(bb *bitbuffer.BitBuffer, name string, value reflect.Value, roo
 		return err
 	}
 
+	fieldWidth, err := tagFieldWidth(tags)
+
+	if err != nil {
+		return
+	}
+
 	switch kind {
 	case reflect.Bool:
-		marshalBool(bb, endian, value.Bool())
+		err = marshalBool(bb, fieldWidth.Width(8), value.Bool())
 	case reflect.Uint8:
-		marshalUint(bb, endian, 8, value.Uint())
+		err = marshalUint(bb, endian, fieldWidth.Width(8), value.Uint())
 	case reflect.Uint16:
-		marshalUint(bb, endian, 16, value.Uint())
+		err = marshalUint(bb, endian, fieldWidth.Width(16), value.Uint())
 	case reflect.Uint32:
-		marshalUint(bb, endian, 32, value.Uint())
+		err = marshalUint(bb, endian, fieldWidth.Width(32), value.Uint())
 	case reflect.Uint64:
-		marshalUint(bb, endian, 64, value.Uint())
+		err = marshalUint(bb, endian, fieldWidth.Width(64), value.Uint())
 	case reflect.Struct:
 		err = marshalStruct(bb, value, root)
 	case reflect.Array, reflect.Slice:
@@ -79,7 +85,9 @@ func marshalArrayOrSlice(bb *bitbuffer.BitBuffer, value reflect.Value, root refl
 	}
 
 	if length.HasPrefix() {
-		marshalUint(bb, length.Endian, length.Size, uint64(value.Len()))
+		if err := marshalUint(bb, length.Endian, int(length.Size), uint64(value.Len())); err != nil {
+			return err
+		}
 	}
 
 	for i := 0; i < value.Len(); i++ {
@@ -119,36 +127,52 @@ func marshalString(bb *bitbuffer.BitBuffer, value reflect.Value, tags reflect.St
 			return fmt.Errorf("string too large to be represented by prefixed length")
 		}
 
-		marshalUint(bb, stringTag.Endian, stringTag.Size, uint64(stringLength))
+		marshalUint(bb, stringTag.Endian, int(stringTag.Size), uint64(stringLength))
 		bb.WriteString(value.String())
 	}
 
 	return nil
 }
 
-func marshalBool(bb *bitbuffer.BitBuffer, endian EndianTag, value bool) {
+func marshalBool(bb *bitbuffer.BitBuffer, bitSize int, value bool) error {
 	byteValue := 0x00
 
 	if value {
 		byteValue = 0x01
 	}
 
-	bb.WriteByte(byte(byteValue))
+	return bb.WriteBits(byte(byteValue), bitSize)
 }
 
-func marshalUint(bb *bitbuffer.BitBuffer, endian EndianTag, bitSize uint8, value uint64) {
-	size := (bitSize + 7) / 8
+func marshalUint(bb *bitbuffer.BitBuffer, endian EndianTag, bitSize int, value uint64) error {
+	maxValue := math.Pow(2, float64(bitSize)) - 1
 
-	switch endian {
-	case BigEndian:
-		for i := uint8(0); i < size; i++ {
-			shiftOffset := (size - i - 1) * 8
-			bb.WriteByte(byte(value >> shiftOffset))
+	if float64(value) > maxValue {
+		return fmt.Errorf("cannot marshal value %d into %d bit field", value, bitSize)
+	}
+
+	if bitSize < 8 {
+		bb.WriteBits(byte(value), bitSize)
+	} else {
+		size := (bitSize + 7) / 8
+
+		if (size * 8) != bitSize {
+			return fmt.Errorf("unable to handle arbitary bit widths > 8 bits, %d requested", bitSize)
 		}
-	case LittleEndian:
-		for i := uint8(0); i < size; i++ {
-			shiftOffset := i * 8
-			bb.WriteByte(byte(value >> shiftOffset))
+
+		switch endian {
+		case BigEndian:
+			for i := 0; i < size; i++ {
+				shiftOffset := (size - i - 1) * 8
+				bb.WriteByte(byte(value >> shiftOffset))
+			}
+		case LittleEndian:
+			for i := 0; i < size; i++ {
+				shiftOffset := i * 8
+				bb.WriteByte(byte(value >> shiftOffset))
+			}
 		}
 	}
+
+	return nil
 }

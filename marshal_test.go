@@ -491,4 +491,87 @@ func TestMarshal(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, expectedBytes, actualBytes)
 	})
+
+	t.Run("two 3 bit uints are written", func(t *testing.T) {
+		type StructUnderTest struct {
+			One uint8 `bcfieldwidth:"3"`
+			Two uint8 `bcfieldwidth:"3"`
+		}
+
+		instance := &StructUnderTest{One: 0b101, Two: 0b101}
+		actualBytes, err := Marshal(instance)
+
+		expectedBytes := []byte{0b10110100}
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedBytes, actualBytes)
+	})
+
+	t.Run("writing a multibyte integer which is not a standard size", func(t *testing.T) {
+		type StructUnderTest struct {
+			One uint32 `bcfieldwidth:"24"`
+		}
+
+		instance := &StructUnderTest{One: 0x00aabbcc}
+		actualBytes, err := Marshal(instance)
+
+		expectedBytes := []byte{0xcc, 0xbb, 0xaa}
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedBytes, actualBytes)
+	})
+
+	t.Run("writing an uint with a larger value than the field width results in error", func(t *testing.T) {
+		type StructUnderTest struct {
+			One uint8 `bcfieldwidth:"3"`
+		}
+
+		instance := &StructUnderTest{One: 8}
+		_, err := Marshal(instance)
+
+		assert.Error(t, err)
+	})
+
+	t.Run("an error is thrown when a non byte aligned width over 8 bits is requested", func(t *testing.T) {
+		type StructUnderTest struct {
+			One uint8 `bcfieldwidth:"9"`
+		}
+
+		instance := &StructUnderTest{One: 0}
+		_, err := Marshal(instance)
+
+		assert.Error(t, err)
+	})
+
+	t.Run("two 1 bit bools and a 6 bit uint are written", func(t *testing.T) {
+		type StructUnderTest struct {
+			One   bool  `bcfieldwidth:"1"`
+			Two   bool  `bcfieldwidth:"1"`
+			Three uint8 `bcfieldwidth:"6"`
+		}
+
+		instance := &StructUnderTest{One: true, Two: true, Three: 0x2d}
+		actualBytes, err := Marshal(instance)
+
+		expectedBytes := []byte{0b11101101}
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedBytes, actualBytes)
+	})
+
+	t.Run("6 bit uint, array with 2 bit prefix is written", func(t *testing.T) {
+		type StructUnderTest struct {
+			One uint8  `bcfieldwidth:"6"`
+			Two []byte `bcsliceprefix:"2"`
+		}
+
+		instance := &StructUnderTest{One: 0x2d, Two: []byte{0x00, 0x01}}
+		actualBytes, err := Marshal(instance)
+
+		expectedBytes := []byte{0b10110110, 0x00, 0x01}
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedBytes, actualBytes)
+	})
+
 }
