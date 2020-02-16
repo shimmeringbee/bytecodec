@@ -173,12 +173,12 @@ func unmarshalSlice(bb *bitbuffer.BitBuffer, value reflect.Value, root reflect.V
 }
 
 func readArraySliceLength(bb *bitbuffer.BitBuffer, tags reflect.StructTag, max int) (int, error) {
-	length, err := tagLength(tags)
+	length, err := tagSlicePrefix(tags)
 	if err != nil {
 		return 0, err
 	}
 
-	if length.HasLength() {
+	if length.HasPrefix() {
 		readSize, err := readUintFromBuffer(bb, length.Endian, length.Size)
 		if err != nil {
 			return 0, err
@@ -191,7 +191,7 @@ func readArraySliceLength(bb *bitbuffer.BitBuffer, tags reflect.StructTag, max i
 }
 
 func unmarshalString(bb *bitbuffer.BitBuffer, value reflect.Value, tags reflect.StructTag) error {
-	stringTag, err := tagString(tags)
+	stringTag, err := tagStringType(tags)
 	if err != nil {
 		return err
 	}

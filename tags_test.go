@@ -27,45 +27,45 @@ func TestTagsEndian(t *testing.T) {
 	})
 }
 
-func TestTagsLength(t *testing.T) {
+func TestTagsArrayPrefix(t *testing.T) {
 	t.Run("verifies that unannotated results in a length tag of 0 and little endian", func(t *testing.T) {
-		expectedValue := LengthTag{
+		expectedValue := SlicePrefixTag{
 			Size:   0,
 			Endian: LittleEndian,
 		}
-		actualValue, err := tagLength("")
+		actualValue, err := tagSlicePrefix("")
 
 		assert.NoError(t, err)
-		assert.False(t, actualValue.HasLength())
+		assert.False(t, actualValue.HasPrefix())
 		assert.Equal(t, expectedValue, actualValue)
 	})
 
 	t.Run("verifies that annotated with length of one and no endian", func(t *testing.T) {
-		expectedValue := LengthTag{
+		expectedValue := SlicePrefixTag{
 			Size:   1,
 			Endian: LittleEndian,
 		}
-		actualValue, err := tagLength(`bclength:"8"`)
+		actualValue, err := tagSlicePrefix(`bcsliceprefix:"8"`)
 
 		assert.NoError(t, err)
-		assert.True(t, actualValue.HasLength())
+		assert.True(t, actualValue.HasPrefix())
 		assert.Equal(t, expectedValue, actualValue)
 	})
 
 	t.Run("verifies that annotated with length of one and no endian", func(t *testing.T) {
-		expectedValue := LengthTag{
+		expectedValue := SlicePrefixTag{
 			Size:   2,
 			Endian: BigEndian,
 		}
-		actualValue, err := tagLength(`bclength:"16,big"`)
+		actualValue, err := tagSlicePrefix(`bcsliceprefix:"16,big"`)
 
 		assert.NoError(t, err)
-		assert.True(t, actualValue.HasLength())
+		assert.True(t, actualValue.HasPrefix())
 		assert.Equal(t, expectedValue, actualValue)
 	})
 
 	t.Run("verify that parse of invalid bit count returns error", func(t *testing.T) {
-		_, err := tagLength(`bclength:"SPOON,big"`)
+		_, err := tagSlicePrefix(`bcsliceprefix:"SPOON,big"`)
 
 		assert.Error(t, err)
 	})
@@ -73,61 +73,61 @@ func TestTagsLength(t *testing.T) {
 
 func TestTagsString(t *testing.T) {
 	t.Run("verifies that unannotated results in a prefix with a length tag of 0 and little endian", func(t *testing.T) {
-		expectedValue := StringTag{
+		expectedValue := StringTypeTag{
 			Termination: Prefix,
 			Size:        8,
 			Endian:      LittleEndian,
 		}
-		actualValue, err := tagString("")
+		actualValue, err := tagStringType("")
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedValue, actualValue)
 	})
 
 	t.Run("verifies that annotated with a prefix and length of 16 bits and big endian", func(t *testing.T) {
-		expectedValue := StringTag{
+		expectedValue := StringTypeTag{
 			Termination: Prefix,
 			Size:        16,
 			Endian:      BigEndian,
 		}
-		actualValue, err := tagString(`bcstring:"prefix,16,big"`)
+		actualValue, err := tagStringType(`bcstringtype:"prefix,16,big"`)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedValue, actualValue)
 	})
 
 	t.Run("verifies that annotated with null", func(t *testing.T) {
-		expectedValue := StringTag{
+		expectedValue := StringTypeTag{
 			Termination: Null,
 			Size:        0,
 			Endian:      LittleEndian,
 		}
-		actualValue, err := tagString(`bcstring:"null"`)
+		actualValue, err := tagStringType(`bcstringtype:"null"`)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedValue, actualValue)
 	})
 
 	t.Run("verifies that annotated with null with a padding size", func(t *testing.T) {
-		expectedValue := StringTag{
+		expectedValue := StringTypeTag{
 			Termination: Null,
 			Size:        8,
 			Endian:      LittleEndian,
 		}
-		actualValue, err := tagString(`bcstring:"null,8"`)
+		actualValue, err := tagStringType(`bcstringtype:"null,8"`)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedValue, actualValue)
 	})
 
 	t.Run("verifies that annotated with null, and an invalid padding size", func(t *testing.T) {
-		_, err := tagString(`bcstring:"null,SPOON,big"`)
+		_, err := tagStringType(`bcstringtype:"null,SPOON,big"`)
 
 		assert.Error(t, err)
 	})
 
 	t.Run("verifies that annotated with prefix, and an invalid padding size", func(t *testing.T) {
-		_, err := tagString(`bcstring:"prefix,SPOON,big"`)
+		_, err := tagStringType(`bcstringtype:"prefix,SPOON,big"`)
 
 		assert.Error(t, err)
 	})

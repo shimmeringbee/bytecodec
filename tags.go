@@ -17,19 +17,19 @@ func tagEndianness(tag reflect.StructTag) EndianTag {
 	return LittleEndian
 }
 
-type LengthTag struct {
+type SlicePrefixTag struct {
 	Size   uint8
 	Endian EndianTag
 }
 
-func (l LengthTag) HasLength() bool {
+func (l SlicePrefixTag) HasPrefix() bool {
 	return l.Size > 0
 }
 
-func tagLength(tag reflect.StructTag) (l LengthTag, err error) {
+func tagSlicePrefix(tag reflect.StructTag) (l SlicePrefixTag, err error) {
 	l.Endian = LittleEndian
 
-	rawTag := tag.Get(TagLength)
+	rawTag := tag.Get(TagSlicePrefix)
 
 	if rawTag == "" {
 		return
@@ -59,18 +59,18 @@ func tagLength(tag reflect.StructTag) (l LengthTag, err error) {
 	return
 }
 
-type StringTag struct {
+type StringTypeTag struct {
 	Termination StringTermination
 	Size        uint8
 	Endian      EndianTag
 }
 
-func tagString(tag reflect.StructTag) (s StringTag, err error) {
+func tagStringType(tag reflect.StructTag) (s StringTypeTag, err error) {
 	s.Termination = Prefix
 	s.Size = 8
 	s.Endian = LittleEndian
 
-	rawTag := tag.Get(TagString)
+	rawTag := tag.Get(TagStringType)
 
 	if rawTag == "" {
 		return
@@ -141,4 +141,8 @@ func tagIncludeIf(tag reflect.StructTag) (i IncludeIfTag, err error) {
 	i.FieldPath = pathParts[partStart:]
 
 	return
+}
+
+func (i IncludeIfTag) HasIncludeIf() bool {
+	return len(i.FieldPath) > 0
 }

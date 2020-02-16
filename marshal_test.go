@@ -250,7 +250,7 @@ func TestMarshal(t *testing.T) {
 
 	t.Run("verify slices support implicit length annotations, uint8", func(t *testing.T) {
 		type StructUnderTest struct {
-			One []byte `bclength:"8"`
+			One []byte `bcsliceprefix:"8"`
 		}
 
 		instance := &StructUnderTest{One: []byte{0x55, 0xaa}}
@@ -264,7 +264,7 @@ func TestMarshal(t *testing.T) {
 
 	t.Run("verify arrays support implicit length annotations, uint8", func(t *testing.T) {
 		type StructUnderTest struct {
-			One [2]byte `bclength:"8"`
+			One [2]byte `bcsliceprefix:"8"`
 		}
 
 		instance := &StructUnderTest{One: [2]byte{0x55, 0xaa}}
@@ -278,7 +278,7 @@ func TestMarshal(t *testing.T) {
 
 	t.Run("verify slices support implicit length annotations, uint16, big endian", func(t *testing.T) {
 		type StructUnderTest struct {
-			One []byte `bclength:"16,big"`
+			One []byte `bcsliceprefix:"16,big"`
 		}
 
 		instance := &StructUnderTest{One: []byte{0x55, 0xaa}}
@@ -292,7 +292,7 @@ func TestMarshal(t *testing.T) {
 
 	t.Run("verify slices support implicit length annotations, uint16, default little endian", func(t *testing.T) {
 		type StructUnderTest struct {
-			One []byte `bclength:"16"`
+			One []byte `bcsliceprefix:"16"`
 		}
 
 		instance := &StructUnderTest{One: []byte{0x55, 0xaa}}
@@ -320,7 +320,7 @@ func TestMarshal(t *testing.T) {
 
 	t.Run("verify size uint16 big endian prefixed string marshals", func(t *testing.T) {
 		type StructUnderTest struct {
-			One string `bcstring:"prefix,16,big"`
+			One string `bcstringtype:"prefix,16,big"`
 		}
 
 		instance := &StructUnderTest{One: "abc"}
@@ -345,7 +345,7 @@ func TestMarshal(t *testing.T) {
 
 	t.Run("verify null terminated string marshals", func(t *testing.T) {
 		type StructUnderTest struct {
-			One string `bcstring:"null"`
+			One string `bcstringtype:"null"`
 		}
 
 		instance := &StructUnderTest{One: "abc"}
@@ -359,7 +359,7 @@ func TestMarshal(t *testing.T) {
 
 	t.Run("verify null terminated string with padding marshals", func(t *testing.T) {
 		type StructUnderTest struct {
-			One string `bcstring:"null,8"`
+			One string `bcstringtype:"null,8"`
 		}
 
 		instance := &StructUnderTest{One: "abc"}
@@ -373,7 +373,7 @@ func TestMarshal(t *testing.T) {
 
 	t.Run("verify null terminated string with padding errors if no room for null terminator", func(t *testing.T) {
 		type StructUnderTest struct {
-			One string `bcstring:"null,4"`
+			One string `bcstringtype:"null,4"`
 		}
 
 		instance := &StructUnderTest{One: "abcd"}

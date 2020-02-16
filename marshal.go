@@ -73,12 +73,12 @@ func marshalStruct(bb *bitbuffer.BitBuffer, structValue reflect.Value, root refl
 }
 
 func marshalArrayOrSlice(bb *bitbuffer.BitBuffer, value reflect.Value, root reflect.Value, parent reflect.Value, tags reflect.StructTag) error {
-	length, err := tagLength(tags)
+	length, err := tagSlicePrefix(tags)
 	if err != nil {
 		return err
 	}
 
-	if length.HasLength() {
+	if length.HasPrefix() {
 		marshalUint(bb, length.Endian, length.Size, uint64(value.Len()))
 	}
 
@@ -93,7 +93,7 @@ func marshalArrayOrSlice(bb *bitbuffer.BitBuffer, value reflect.Value, root refl
 }
 
 func marshalString(bb *bitbuffer.BitBuffer, value reflect.Value, tags reflect.StructTag) error {
-	stringTag, err := tagString(tags)
+	stringTag, err := tagStringType(tags)
 	if err != nil {
 		return err
 	}

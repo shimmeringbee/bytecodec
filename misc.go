@@ -16,10 +16,10 @@ const (
 	Prefix StringTermination = 0
 	Null   StringTermination = 1
 
-	TagEndian    = "bcendian"
-	TagLength    = "bclength"
-	TagString    = "bcstring"
-	TagIncludeIf = "bcincludeif"
+	TagEndian      = "bcendian"
+	TagSlicePrefix = "bcsliceprefix"
+	TagStringType  = "bcstringtype"
+	TagIncludeIf   = "bcincludeif"
 )
 
 func shouldIgnore(tags reflect.StructTag, root reflect.Value, parent reflect.Value) (bool, error) {
@@ -29,7 +29,7 @@ func shouldIgnore(tags reflect.StructTag, root reflect.Value, parent reflect.Val
 		return false, err
 	}
 
-	if len(includeIf.FieldPath) > 0 {
+	if includeIf.HasIncludeIf() {
 		includeBase := root
 
 		if includeIf.Relative {
