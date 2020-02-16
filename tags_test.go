@@ -42,7 +42,7 @@ func TestTagsArrayPrefix(t *testing.T) {
 
 	t.Run("verifies that annotated with length of one and no endian", func(t *testing.T) {
 		expectedValue := SlicePrefixTag{
-			Size:   1,
+			Size:   8,
 			Endian: LittleEndian,
 		}
 		actualValue, err := tagSlicePrefix(`bcsliceprefix:"8"`)
@@ -54,7 +54,7 @@ func TestTagsArrayPrefix(t *testing.T) {
 
 	t.Run("verifies that annotated with length of one and no endian", func(t *testing.T) {
 		expectedValue := SlicePrefixTag{
-			Size:   2,
+			Size:   16,
 			Endian: BigEndian,
 		}
 		actualValue, err := tagSlicePrefix(`bcsliceprefix:"16,big"`)
