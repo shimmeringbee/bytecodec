@@ -47,9 +47,9 @@ func (l SlicePrefixTag) HasPrefix() bool {
 func tagSlicePrefix(tag reflect.StructTag) (l SlicePrefixTag, err error) {
 	l.Endian = LittleEndian
 
-	rawTag := tag.Get(TagSlicePrefix)
+	rawTag, tagPresent := tag.Lookup(TagSlicePrefix)
 
-	if rawTag == "" {
+	if !tagPresent {
 		return
 	}
 
@@ -88,9 +88,9 @@ func tagStringType(tag reflect.StructTag) (s StringTypeTag, err error) {
 	s.Size = 8
 	s.Endian = LittleEndian
 
-	rawTag := tag.Get(TagStringType)
+	rawTag, tagPresent := tag.Lookup(TagStringType)
 
-	if rawTag == "" {
+	if !tagPresent {
 		return
 	}
 
@@ -130,9 +130,9 @@ type IncludeIfTag struct {
 }
 
 func tagIncludeIf(tag reflect.StructTag) (i IncludeIfTag, err error) {
-	rawTag := tag.Get(TagIncludeIf)
+	rawTag, tagPresent := tag.Lookup(TagIncludeIf)
 
-	if rawTag == "" {
+	if !tagPresent {
 		return IncludeIfTag{}, nil
 	}
 
@@ -179,9 +179,9 @@ func (t FieldWidthTag) Width(defaultWidth int) int {
 }
 
 func tagFieldWidth(tag reflect.StructTag) (t FieldWidthTag, err error) {
-	rawTag := tag.Get(TagFieldWidth)
+	rawTag, tagPresent := tag.Lookup(TagFieldWidth)
 
-	if rawTag == "" {
+	if !tagPresent {
 		t.Default = true
 	} else {
 		t.Default = false
