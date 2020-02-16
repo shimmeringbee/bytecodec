@@ -35,13 +35,13 @@ func marshalValue(bb *bitbuffer.BitBuffer, name string, value reflect.Value, roo
 	case reflect.Bool:
 		marshalBool(bb, endian, value.Bool())
 	case reflect.Uint8:
-		marshalUint(bb, endian, 1, value.Uint())
-	case reflect.Uint16:
-		marshalUint(bb, endian, 2, value.Uint())
-	case reflect.Uint32:
-		marshalUint(bb, endian, 4, value.Uint())
-	case reflect.Uint64:
 		marshalUint(bb, endian, 8, value.Uint())
+	case reflect.Uint16:
+		marshalUint(bb, endian, 16, value.Uint())
+	case reflect.Uint32:
+		marshalUint(bb, endian, 32, value.Uint())
+	case reflect.Uint64:
+		marshalUint(bb, endian, 64, value.Uint())
 	case reflect.Struct:
 		err = marshalStruct(bb, value, root)
 	case reflect.Array, reflect.Slice:
@@ -119,7 +119,7 @@ func marshalString(bb *bitbuffer.BitBuffer, value reflect.Value, tags reflect.St
 			return fmt.Errorf("string too large to be represented by prefixed length")
 		}
 
-		marshalUint(bb, stringTag.Endian, (stringTag.Size+7)/8, uint64(stringLength))
+		marshalUint(bb, stringTag.Endian, stringTag.Size, uint64(stringLength))
 		bb.WriteString(value.String())
 	}
 
@@ -136,7 +136,9 @@ func marshalBool(bb *bitbuffer.BitBuffer, endian EndianTag, value bool) {
 	bb.WriteByte(byte(byteValue))
 }
 
-func marshalUint(bb *bitbuffer.BitBuffer, endian EndianTag, size uint8, value uint64) {
+func marshalUint(bb *bitbuffer.BitBuffer, endian EndianTag, bitSize uint8, value uint64) {
+	size := (bitSize + 7) / 8
+
 	switch endian {
 	case BigEndian:
 		for i := uint8(0); i < size; i++ {

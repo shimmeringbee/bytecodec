@@ -63,7 +63,7 @@ func tagSlicePrefix(tag reflect.StructTag) (l SlicePrefixTag, err error) {
 		return
 	}
 
-	l.Size = uint8((bitCount + 7) / 8)
+	l.Size = uint8(bitCount)
 
 	if len(splitTag) < 2 {
 		return

@@ -39,13 +39,13 @@ func unmarshalValue(bb *bitbuffer.BitBuffer, name string, value reflect.Value, r
 	case reflect.Bool:
 		err = unmarshalBool(bb, endian, value)
 	case reflect.Uint8:
-		err = unmarshalUint(bb, endian, 1, value)
-	case reflect.Uint16:
-		err = unmarshalUint(bb, endian, 2, value)
-	case reflect.Uint32:
-		err = unmarshalUint(bb, endian, 4, value)
-	case reflect.Uint64:
 		err = unmarshalUint(bb, endian, 8, value)
+	case reflect.Uint16:
+		err = unmarshalUint(bb, endian, 16, value)
+	case reflect.Uint32:
+		err = unmarshalUint(bb, endian, 32, value)
+	case reflect.Uint64:
+		err = unmarshalUint(bb, endian, 64, value)
 	case reflect.Struct:
 		err = unmarshalStruct(bb, value, root)
 	case reflect.Array:
@@ -101,7 +101,9 @@ func unmarshalUint(bb *bitbuffer.BitBuffer, endian EndianTag, size uint8, value 
 	return nil
 }
 
-func readUintFromBuffer(bb *bitbuffer.BitBuffer, endian EndianTag, size uint8) (uint64, error) {
+func readUintFromBuffer(bb *bitbuffer.BitBuffer, endian EndianTag, bitSize uint8) (uint64, error) {
+	size := (bitSize + 7) / 8
+
 	readValue := uint64(0)
 
 	switch endian {
@@ -235,7 +237,7 @@ func unmarshalString(bb *bitbuffer.BitBuffer, value reflect.Value, tags reflect.
 		}
 
 	} else {
-		stringLength, err := readUintFromBuffer(bb, stringTag.Endian, (stringTag.Size+7)/8)
+		stringLength, err := readUintFromBuffer(bb, stringTag.Endian, stringTag.Size)
 		if err != nil {
 			return err
 		}
