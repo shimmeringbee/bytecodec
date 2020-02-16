@@ -39,7 +39,7 @@ func findBooleanValue(structValue reflect.Value, path []string) (bool, error) {
 		name := field.Name
 
 		if name == thisLevel {
-			if len(remainingPath) > 1 {
+			if len(remainingPath) >= 1 {
 				if value.Kind() != reflect.Struct {
 					return false, fmt.Errorf("includeIf path could not be parsed: %s is not a struct", name)
 				}

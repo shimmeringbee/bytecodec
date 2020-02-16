@@ -492,6 +492,26 @@ func TestMarshal(t *testing.T) {
 		assert.Equal(t, expectedBytes, actualBytes)
 	})
 
+	t.Run("verify nested struct with includeIf handles absolute reference and includes if true", func(t *testing.T) {
+		type Nested struct {
+			One bool
+			Two uint8 `bcincludeif:".Nested.One"`
+		}
+
+		type StructUnderTest struct {
+			One    bool
+			Nested Nested
+		}
+
+		instance := &StructUnderTest{One: false, Nested: Nested{One: true, Two: 2}}
+		actualBytes, err := Marshal(instance)
+
+		expectedBytes := []byte{0x00, 0x01, 0x02}
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedBytes, actualBytes)
+	})
+
 	t.Run("two 3 bit uints are written", func(t *testing.T) {
 		type StructUnderTest struct {
 			One uint8 `bcfieldwidth:"3"`
