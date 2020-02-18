@@ -84,6 +84,11 @@ func unmarshalPtr(bb *bitbuffer.BitBuffer, value reflect.Value) error {
 		}
 
 		retVals := value.MethodByName("Unmarshal").Call([]reflect.Value{reflect.ValueOf(bb)})
+
+		if retVals[0].IsNil() {
+			return nil
+		}
+
 		return retVals[0].Interface().(error)
 	} else {
 		return fmt.Errorf("%w: field does not support the Marshaler interface", UnsupportedType)
