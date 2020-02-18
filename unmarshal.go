@@ -12,7 +12,10 @@ import (
 
 func Unmarshal(data []byte, v interface{}) (err error) {
 	bb := bitbuffer.NewBitBufferFromBytes(data)
+	return UnmarshalFromBitBuffer(bb, v)
+}
 
+func UnmarshalFromBitBuffer(bb *bitbuffer.BitBuffer, v interface {}) (err error) {
 	val := reflect.Indirect(reflect.ValueOf(v))
 
 	if !val.CanSet() {
@@ -58,6 +61,8 @@ func unmarshalValue(bb *bitbuffer.BitBuffer, name string, value reflect.Value, r
 		err = unmarshalArray(bb, value, root, parent, tags)
 	case reflect.Slice:
 		err = unmarshalSlice(bb, value, root, parent, tags)
+	case reflect.Ptr:
+		err = unmarshalPtr(bb, value)
 	case reflect.String:
 		err = unmarshalString(bb, value, tags)
 	default:
@@ -65,6 +70,25 @@ func unmarshalValue(bb *bitbuffer.BitBuffer, name string, value reflect.Value, r
 	}
 
 	return
+}
+
+func unmarshalPtr(bb *bitbuffer.BitBuffer, value reflect.Value) error {
+	unmarshaler := reflect.TypeOf((*Unmarshaler)(nil)).Elem()
+
+	if value.Type().Implements(unmarshaler) {
+		if value.IsNil() {
+			e := reflect.New(value.Type().Elem())
+			if value.CanSet() {
+				value.Set(e)
+			}
+		}
+
+		value.MethodByName("Unmarshal").Call([]reflect.Value{reflect.ValueOf(bb)})
+	} else {
+		return fmt.Errorf("%w: field does not support the Marshaler interface", UnsupportedType)
+	}
+
+	return nil
 }
 
 func unmarshalStruct(bb *bitbuffer.BitBuffer, structValue reflect.Value, root reflect.Value) error {

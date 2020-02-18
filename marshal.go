@@ -13,13 +13,17 @@ var UnsupportedType = errors.New("unsupported type")
 func Marshal(v interface{}) ([]byte, error) {
 	bb := bitbuffer.NewBitBuffer()
 
-	val := reflect.Indirect(reflect.ValueOf(v))
-
-	if err := marshalValue(bb, "root", val, val, val, ""); err != nil {
-		return nil, err
+	if err := MarshalToBitBuffer(bb, v); err != nil {
+		return []byte{}, err
 	}
 
 	return bb.Bytes(), nil
+}
+
+func MarshalToBitBuffer(bb *bitbuffer.BitBuffer, v interface{}) error {
+	val := reflect.Indirect(reflect.ValueOf(v))
+
+	return marshalValue(bb, "root", val, val, val, "")
 }
 
 func marshalValue(bb *bitbuffer.BitBuffer, name string, value reflect.Value, root reflect.Value, parent reflect.Value, tags reflect.StructTag) (err error) {
@@ -54,11 +58,25 @@ func marshalValue(bb *bitbuffer.BitBuffer, name string, value reflect.Value, roo
 		err = marshalArrayOrSlice(bb, value, root, parent, tags)
 	case reflect.String:
 		err = marshalString(bb, value, tags)
+	case reflect.Ptr:
+		err = marshalPtr(bb, value)
 	default:
 		err = fmt.Errorf("%w: field '%s' of type '%v'", UnsupportedType, name, kind)
 	}
 
 	return
+}
+
+func marshalPtr(bb *bitbuffer.BitBuffer, value reflect.Value) error {
+	marshaler := reflect.TypeOf((*Marshaler)(nil)).Elem()
+
+	if value.Type().Implements(marshaler) {
+		value.MethodByName("Marshal").Call([]reflect.Value{reflect.ValueOf(bb)})
+	} else {
+		return fmt.Errorf("%w: field does not support the Marshaler interface", UnsupportedType)
+	}
+
+	return nil
 }
 
 func marshalStruct(bb *bitbuffer.BitBuffer, structValue reflect.Value, root reflect.Value) error {

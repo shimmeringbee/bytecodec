@@ -2,6 +2,7 @@ package bytecodec
 
 import (
 	"errors"
+	"github.com/shimmeringbee/bytecodec/bitbuffer"
 	"github.com/stretchr/testify/assert"
 	"strings"
 	"testing"
@@ -594,4 +595,48 @@ func TestMarshal(t *testing.T) {
 		assert.Equal(t, expectedBytes, actualBytes)
 	})
 
+	t.Run("supports pointers which implement Marshaller interface", func(t *testing.T) {
+		type StructUnderTest struct {
+			One *CustomField
+		}
+
+		instance := &StructUnderTest{One: &CustomField{Value: 0}}
+		actualBytes, err := Marshal(instance)
+
+		expectedBytes := []byte{0x04, 'Z', 'E', 'R', 'O'}
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedBytes, actualBytes)
+	})
+}
+
+type CustomField struct {
+	Value uint8
+}
+
+func (f *CustomField) Marshal(bb *bitbuffer.BitBuffer) error {
+	if f.Value == 0 {
+		return MarshalToBitBuffer(bb, "ZERO")
+	} else {
+		return MarshalToBitBuffer(bb, "ONE")
+	}
+}
+
+func (f *CustomField) Unmarshal(bb *bitbuffer.BitBuffer) error {
+	s := ""
+	pointer := &s
+
+	err := UnmarshalFromBitBuffer(bb, pointer)
+
+	if err != nil {
+		return err
+	}
+
+	if s == "ZERO" {
+		f.Value = 0
+	} else {
+		f.Value = 1
+	}
+
+	return nil
 }

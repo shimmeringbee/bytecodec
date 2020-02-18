@@ -2,6 +2,7 @@ package bytecodec
 
 import (
 	"fmt"
+	"github.com/shimmeringbee/bytecodec/bitbuffer"
 	"reflect"
 )
 
@@ -56,4 +57,12 @@ func findBooleanValue(structValue reflect.Value, path []string) (bool, error) {
 	}
 
 	return false, fmt.Errorf("includeIf path could not be parsed: %s not found", thisLevel)
+}
+
+type Marshaler interface {
+	Marshal(*bitbuffer.BitBuffer) error
+}
+
+type Unmarshaler interface {
+	Unmarshal(*bitbuffer.BitBuffer) error
 }
