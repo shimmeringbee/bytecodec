@@ -15,7 +15,7 @@ func Unmarshal(data []byte, v interface{}) (err error) {
 	return UnmarshalFromBitBuffer(bb, v)
 }
 
-func UnmarshalFromBitBuffer(bb *bitbuffer.BitBuffer, v interface {}) (err error) {
+func UnmarshalFromBitBuffer(bb *bitbuffer.BitBuffer, v interface{}) (err error) {
 	val := reflect.Indirect(reflect.ValueOf(v))
 
 	if !val.CanSet() {
