@@ -1,7 +1,9 @@
 package bytecodec
 
 import (
+	"fmt"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -123,11 +125,23 @@ func tagStringType(tag reflect.StructTag) (s StringTypeTag, err error) {
 	return
 }
 
+type IncludeIfOperation uint8
+
+const (
+	Equal    IncludeIfOperation = 0x00
+	NotEqual IncludeIfOperation = 0x01
+)
+
 type IncludeIfTag struct {
 	Relative  bool
 	FieldPath []string
-	Value     bool
+
+	Operation IncludeIfOperation
+
+	Value string
 }
+
+var IncludeIfRegex = regexp.MustCompile(`^([a-zA-Z0-9.]+)(!=|==)?(.*)$`)
 
 func tagIncludeIf(tag reflect.StructTag) (i IncludeIfTag, err error) {
 	rawTag, tagPresent := tag.Lookup(TagIncludeIf)
@@ -136,20 +150,15 @@ func tagIncludeIf(tag reflect.StructTag) (i IncludeIfTag, err error) {
 		return IncludeIfTag{}, nil
 	}
 
-	i.Value = true
-	i.Relative = rawTag[0] != '.'
+	matches := IncludeIfRegex.FindAllSubmatch([]byte(rawTag), -1)
 
-	tagParts := strings.Split(rawTag, "=")
+	path := string(matches[0][1])
+	operator := string(matches[0][2])
 
-	if len(tagParts) > 1 {
-		i.Value, err = strconv.ParseBool(tagParts[1])
+	i.Value = string(matches[0][3])
+	i.Relative = path[0] != '.'
 
-		if err != nil {
-			return
-		}
-	}
-
-	pathParts := strings.Split(tagParts[0], ".")
+	pathParts := strings.Split(path, ".")
 	partStart := 1
 
 	if i.Relative {
@@ -157,6 +166,14 @@ func tagIncludeIf(tag reflect.StructTag) (i IncludeIfTag, err error) {
 	}
 
 	i.FieldPath = pathParts[partStart:]
+
+	if operator == "==" || operator == "" {
+		i.Operation = Equal
+	} else if operator == "!=" {
+		i.Operation = NotEqual
+	} else {
+		return IncludeIfTag{}, fmt.Errorf("'%s' is not a valid includeIf operator", operator)
+	}
 
 	return
 }

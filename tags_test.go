@@ -140,7 +140,8 @@ func TestTagsIncludeIf(t *testing.T) {
 		assert.Equal(t, IncludeIfTag{
 			Relative:  false,
 			FieldPath: []string{"field"},
-			Value:     true,
+			Operation: Equal,
+			Value:     "",
 		}, tag)
 		assert.NoError(t, err)
 	})
@@ -151,7 +152,8 @@ func TestTagsIncludeIf(t *testing.T) {
 		assert.Equal(t, IncludeIfTag{
 			Relative:  true,
 			FieldPath: []string{"field"},
-			Value:     true,
+			Operation: Equal,
+			Value:     "",
 		}, tag)
 		assert.NoError(t, err)
 	})
@@ -162,7 +164,8 @@ func TestTagsIncludeIf(t *testing.T) {
 		assert.Equal(t, IncludeIfTag{
 			Relative:  false,
 			FieldPath: []string{"fieldOne", "fieldTwo"},
-			Value:     true,
+			Operation: Equal,
+			Value:     "",
 		}, tag)
 		assert.NoError(t, err)
 	})
@@ -173,29 +176,44 @@ func TestTagsIncludeIf(t *testing.T) {
 		assert.Equal(t, IncludeIfTag{
 			Relative:  true,
 			FieldPath: []string{"fieldOne", "fieldTwo"},
-			Value:     true,
+			Operation: Equal,
+			Value:     "",
 		}, tag)
 		assert.NoError(t, err)
 	})
 
 	t.Run("verifies that single path non relative set to true", func(t *testing.T) {
-		tag, err := tagIncludeIf(`bcincludeif:".field=true"`)
+		tag, err := tagIncludeIf(`bcincludeif:".field==true"`)
 
 		assert.Equal(t, IncludeIfTag{
 			Relative:  false,
 			FieldPath: []string{"field"},
-			Value:     true,
+			Operation: Equal,
+			Value:     "true",
 		}, tag)
 		assert.NoError(t, err)
 	})
 
 	t.Run("verifies that single path non relative set to false", func(t *testing.T) {
-		tag, err := tagIncludeIf(`bcincludeif:".field=false"`)
+		tag, err := tagIncludeIf(`bcincludeif:".field==false"`)
 
 		assert.Equal(t, IncludeIfTag{
 			Relative:  false,
 			FieldPath: []string{"field"},
-			Value:     false,
+			Operation: Equal,
+			Value:     "false",
+		}, tag)
+		assert.NoError(t, err)
+	})
+
+	t.Run("verifies that single path non relative set to false", func(t *testing.T) {
+		tag, err := tagIncludeIf(`bcincludeif:".field!=false"`)
+
+		assert.Equal(t, IncludeIfTag{
+			Relative:  false,
+			FieldPath: []string{"field"},
+			Operation: NotEqual,
+			Value:     "false",
 		}, tag)
 		assert.NoError(t, err)
 	})
