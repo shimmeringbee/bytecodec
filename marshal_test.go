@@ -513,6 +513,36 @@ func TestMarshal(t *testing.T) {
 		assert.Equal(t, expectedBytes, actualBytes)
 	})
 
+	t.Run("verify struct with includeIf marshals a field which matches the integer condition", func(t *testing.T) {
+		type StructUnderTest struct {
+			One uint32
+			Two uint8 `bcincludeif:".One==32"`
+		}
+
+		instance := &StructUnderTest{One: 32, Two: 2}
+		actualBytes, err := Marshal(instance)
+
+		expectedBytes := []byte{0x20, 0x00, 0x00, 0x00, 0x02}
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedBytes, actualBytes)
+	})
+
+	t.Run("verify struct with includeIf does not marshal a field which does not matche the integer condition", func(t *testing.T) {
+		type StructUnderTest struct {
+			One uint32
+			Two uint8 `bcincludeif:".One==32"`
+		}
+
+		instance := &StructUnderTest{One: 16, Two: 2}
+		actualBytes, err := Marshal(instance)
+
+		expectedBytes := []byte{0x10, 0x00, 0x00, 0x00}
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedBytes, actualBytes)
+	})
+
 	t.Run("two 3 bit uints are written", func(t *testing.T) {
 		type StructUnderTest struct {
 			One uint8 `bcfieldwidth:"3"`

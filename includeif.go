@@ -3,6 +3,7 @@ package bytecodec
 import (
 	"fmt"
 	"reflect"
+	"strconv"
 )
 
 func shouldIgnore(tags reflect.StructTag, root reflect.Value, parent reflect.Value) (bool, error) {
@@ -19,19 +20,63 @@ func shouldIgnore(tags reflect.StructTag, root reflect.Value, parent reflect.Val
 			includeBase = parent
 		}
 
-		val, err := findValue(includeBase, includeIf.FieldPath)
+		i, err := findValue(includeBase, includeIf.FieldPath)
 
 		if err != nil {
 			return false, err
 		}
 
-		switch val {
-		case val.(bool):
-			return includeIf.Value != val, err
+		switch v := i.(type) {
+		case bool:
+			stringValue := includeIf.Value
+
+			if stringValue == "" {
+				stringValue = "true"
+			}
+
+			tagVal, err := strconv.ParseBool(stringValue)
+
+			switch includeIf.Operation {
+			case Equal:
+				return tagVal != v, err
+			case NotEqual:
+				return tagVal == v, err
+			default:
+				return false, fmt.Errorf("includeIf path could not be parsed: unable to compare end parameter (unknown comparison for bool)")
+			}
+		case uint8:
+			return compareUint(uint64(v), includeIf)
+		case uint16:
+			return compareUint(uint64(v), includeIf)
+		case uint32:
+			return compareUint(uint64(v), includeIf)
+		case uint64:
+			return compareUint(v, includeIf)
+		default:
+			return false, fmt.Errorf("includeIf path could not be parsed: unable to compare end parameter (unknown type)")
 		}
 	}
 
 	return false, nil
+}
+
+func compareUint(v uint64, includeIf IncludeIfTag) (bool, error) {
+	stringValue := includeIf.Value
+
+	if stringValue == "" {
+		stringValue = "0"
+	}
+
+	tagVal, err := strconv.ParseUint(stringValue, 10, 64)
+
+	switch includeIf.Operation {
+	case Equal:
+		return tagVal != v, err
+	case NotEqual:
+		return tagVal == v, err
+	default:
+		return false, fmt.Errorf("includeIf path could not be parsed: unable to compare end parameter (unknown comparison for bool)")
+	}
 }
 
 func findValue(structValue reflect.Value, path []string) (interface{}, error) {
@@ -52,10 +97,6 @@ func findValue(structValue reflect.Value, path []string) (interface{}, error) {
 				}
 
 				return findValue(value, remainingPath)
-			}
-
-			if value.Kind() != reflect.Bool {
-				return false, fmt.Errorf("includeIf path could not be parsed: %s is not a boolean (end parameter)", name)
 			}
 
 			return value.Interface(), nil
