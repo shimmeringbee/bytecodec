@@ -114,7 +114,7 @@ func unmarshalStruct(bb *bitbuffer.BitBuffer, structValue reflect.Value, root re
 	return nil
 }
 
-func unmarshalBool(bb *bitbuffer.BitBuffer, endian EndianTag, bitSize int, value reflect.Value) error {
+func unmarshalBool(bb *bitbuffer.BitBuffer, endian bitbuffer.Endian, bitSize int, value reflect.Value) error {
 	readValue, err := readUintFromBuffer(bb, endian, bitSize)
 
 	if err != nil {
@@ -126,7 +126,7 @@ func unmarshalBool(bb *bitbuffer.BitBuffer, endian EndianTag, bitSize int, value
 	return nil
 }
 
-func unmarshalUint(bb *bitbuffer.BitBuffer, endian EndianTag, size int, value reflect.Value) error {
+func unmarshalUint(bb *bitbuffer.BitBuffer, endian bitbuffer.Endian, size int, value reflect.Value) error {
 	readValue, err := readUintFromBuffer(bb, endian, size)
 
 	if err != nil {
@@ -137,7 +137,7 @@ func unmarshalUint(bb *bitbuffer.BitBuffer, endian EndianTag, size int, value re
 	return nil
 }
 
-func readUintFromBuffer(bb *bitbuffer.BitBuffer, endian EndianTag, bitSize int) (uint64, error) {
+func readUintFromBuffer(bb *bitbuffer.BitBuffer, endian bitbuffer.Endian, bitSize int) (uint64, error) {
 	if bitSize < 8 {
 		data, err := bb.ReadBits(bitSize)
 		return uint64(data), err
@@ -151,7 +151,7 @@ func readUintFromBuffer(bb *bitbuffer.BitBuffer, endian EndianTag, bitSize int) 
 		readValue := uint64(0)
 
 		switch endian {
-		case BigEndian:
+		case bitbuffer.BigEndian:
 			for i := 0; i < size; i++ {
 				readByte, err := bb.ReadByte()
 				if err != nil {
@@ -161,7 +161,7 @@ func readUintFromBuffer(bb *bitbuffer.BitBuffer, endian EndianTag, bitSize int) 
 				shiftOffset := (size - i - 1) * 8
 				readValue |= uint64(readByte) << shiftOffset
 			}
-		case LittleEndian:
+		case bitbuffer.LittleEndian:
 			for i := 0; i < size; i++ {
 				readByte, err := bb.ReadByte()
 				if err != nil {

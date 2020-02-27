@@ -2,20 +2,16 @@ package bytecodec
 
 import (
 	"fmt"
+	"github.com/shimmeringbee/bytecodec/bitbuffer"
 	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
 )
 
-type EndianTag uint8
-
 type StringTermination uint8
 
 const (
-	BigEndian    EndianTag = 0
-	LittleEndian EndianTag = 1
-
 	Prefix StringTermination = 0
 	Null   StringTermination = 1
 
@@ -29,17 +25,17 @@ const (
 	NullTerminationKeyword = "null"
 )
 
-func tagEndianness(tag reflect.StructTag) EndianTag {
+func tagEndianness(tag reflect.StructTag) bitbuffer.Endian {
 	if tag.Get(TagEndian) == BigEndianKeyword {
-		return BigEndian
+		return bitbuffer.BigEndian
 	}
 
-	return LittleEndian
+	return bitbuffer.LittleEndian
 }
 
 type SlicePrefixTag struct {
 	Size   uint8
-	Endian EndianTag
+	Endian bitbuffer.Endian
 }
 
 func (l SlicePrefixTag) HasPrefix() bool {
@@ -47,7 +43,7 @@ func (l SlicePrefixTag) HasPrefix() bool {
 }
 
 func tagSlicePrefix(tag reflect.StructTag) (l SlicePrefixTag, err error) {
-	l.Endian = LittleEndian
+	l.Endian = bitbuffer.LittleEndian
 
 	rawTag, tagPresent := tag.Lookup(TagSlicePrefix)
 
@@ -73,7 +69,7 @@ func tagSlicePrefix(tag reflect.StructTag) (l SlicePrefixTag, err error) {
 	}
 
 	if splitTag[1] == BigEndianKeyword {
-		l.Endian = BigEndian
+		l.Endian = bitbuffer.BigEndian
 	}
 
 	return
@@ -82,13 +78,13 @@ func tagSlicePrefix(tag reflect.StructTag) (l SlicePrefixTag, err error) {
 type StringTypeTag struct {
 	Termination StringTermination
 	Size        uint8
-	Endian      EndianTag
+	Endian      bitbuffer.Endian
 }
 
 func tagStringType(tag reflect.StructTag) (s StringTypeTag, err error) {
 	s.Termination = Prefix
 	s.Size = 8
-	s.Endian = LittleEndian
+	s.Endian = bitbuffer.LittleEndian
 
 	rawTag, tagPresent := tag.Lookup(TagStringType)
 
@@ -119,7 +115,7 @@ func tagStringType(tag reflect.StructTag) (s StringTypeTag, err error) {
 	}
 
 	if splitTag[2] == BigEndianKeyword {
-		s.Endian = BigEndian
+		s.Endian = bitbuffer.BigEndian
 	}
 
 	return

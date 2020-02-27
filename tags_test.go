@@ -1,27 +1,28 @@
 package bytecodec
 
 import (
+	"github.com/shimmeringbee/bytecodec/bitbuffer"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestTagsEndian(t *testing.T) {
 	t.Run("verifies that unannotated tag returns little endian", func(t *testing.T) {
-		expectedValue := LittleEndian
+		expectedValue := bitbuffer.LittleEndian
 		actualValue := tagEndianness("")
 
 		assert.Equal(t, expectedValue, actualValue)
 	})
 
 	t.Run("verifies that annotated tag with little endian returns little endian", func(t *testing.T) {
-		expectedValue := LittleEndian
+		expectedValue := bitbuffer.LittleEndian
 		actualValue := tagEndianness(`bcendian:"little"`)
 
 		assert.Equal(t, expectedValue, actualValue)
 	})
 
 	t.Run("verifies that annotated tag with big endian returns big endian", func(t *testing.T) {
-		expectedValue := BigEndian
+		expectedValue := bitbuffer.BigEndian
 		actualValue := tagEndianness(`bcendian:"big"`)
 		assert.Equal(t, expectedValue, actualValue)
 	})
@@ -31,7 +32,7 @@ func TestTagsArrayPrefix(t *testing.T) {
 	t.Run("verifies that unannotated results in a length tag of 0 and little endian", func(t *testing.T) {
 		expectedValue := SlicePrefixTag{
 			Size:   0,
-			Endian: LittleEndian,
+			Endian: bitbuffer.LittleEndian,
 		}
 		actualValue, err := tagSlicePrefix("")
 
@@ -43,7 +44,7 @@ func TestTagsArrayPrefix(t *testing.T) {
 	t.Run("verifies that annotated with length of one and no endian", func(t *testing.T) {
 		expectedValue := SlicePrefixTag{
 			Size:   8,
-			Endian: LittleEndian,
+			Endian: bitbuffer.LittleEndian,
 		}
 		actualValue, err := tagSlicePrefix(`bcsliceprefix:"8"`)
 
@@ -55,7 +56,7 @@ func TestTagsArrayPrefix(t *testing.T) {
 	t.Run("verifies that annotated with length of one and no endian", func(t *testing.T) {
 		expectedValue := SlicePrefixTag{
 			Size:   16,
-			Endian: BigEndian,
+			Endian: bitbuffer.BigEndian,
 		}
 		actualValue, err := tagSlicePrefix(`bcsliceprefix:"16,big"`)
 
@@ -76,7 +77,7 @@ func TestTagsString(t *testing.T) {
 		expectedValue := StringTypeTag{
 			Termination: Prefix,
 			Size:        8,
-			Endian:      LittleEndian,
+			Endian:      bitbuffer.LittleEndian,
 		}
 		actualValue, err := tagStringType("")
 
@@ -88,7 +89,7 @@ func TestTagsString(t *testing.T) {
 		expectedValue := StringTypeTag{
 			Termination: Prefix,
 			Size:        16,
-			Endian:      BigEndian,
+			Endian:      bitbuffer.BigEndian,
 		}
 		actualValue, err := tagStringType(`bcstringtype:"prefix,16,big"`)
 
@@ -100,7 +101,7 @@ func TestTagsString(t *testing.T) {
 		expectedValue := StringTypeTag{
 			Termination: Null,
 			Size:        0,
-			Endian:      LittleEndian,
+			Endian:      bitbuffer.LittleEndian,
 		}
 		actualValue, err := tagStringType(`bcstringtype:"null"`)
 
@@ -112,7 +113,7 @@ func TestTagsString(t *testing.T) {
 		expectedValue := StringTypeTag{
 			Termination: Null,
 			Size:        8,
-			Endian:      LittleEndian,
+			Endian:      bitbuffer.LittleEndian,
 		}
 		actualValue, err := tagStringType(`bcstringtype:"null,8"`)
 

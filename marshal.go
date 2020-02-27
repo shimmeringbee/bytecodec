@@ -180,7 +180,7 @@ func marshalBool(bb *bitbuffer.BitBuffer, bitSize int, value bool) error {
 	return bb.WriteBits(byte(byteValue), bitSize)
 }
 
-func marshalUint(bb *bitbuffer.BitBuffer, endian EndianTag, bitSize int, value uint64) error {
+func marshalUint(bb *bitbuffer.BitBuffer, endian bitbuffer.Endian, bitSize int, value uint64) error {
 	maxValue := math.Pow(2, float64(bitSize)) - 1
 
 	if float64(value) > maxValue {
@@ -199,7 +199,7 @@ func marshalUint(bb *bitbuffer.BitBuffer, endian EndianTag, bitSize int, value u
 		}
 
 		switch endian {
-		case BigEndian:
+		case bitbuffer.BigEndian:
 			for i := 0; i < size; i++ {
 				shiftOffset := (size - i - 1) * 8
 
@@ -207,7 +207,7 @@ func marshalUint(bb *bitbuffer.BitBuffer, endian EndianTag, bitSize int, value u
 					return err
 				}
 			}
-		case LittleEndian:
+		case bitbuffer.LittleEndian:
 			for i := 0; i < size; i++ {
 				shiftOffset := i * 8
 				if err := bb.WriteByte(byte(value >> shiftOffset)); err != nil {
