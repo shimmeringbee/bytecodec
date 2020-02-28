@@ -7,7 +7,6 @@ import (
 	"io"
 	"math"
 	"reflect"
-	"strings"
 )
 
 func Unmarshal(data []byte, v interface{}) (err error) {
@@ -115,7 +114,7 @@ func unmarshalStruct(bb *bitbuffer.BitBuffer, structValue reflect.Value, root re
 }
 
 func unmarshalBool(bb *bitbuffer.BitBuffer, endian bitbuffer.Endian, bitSize int, value reflect.Value) error {
-	readValue, err := readUintFromBuffer(bb, endian, bitSize)
+	readValue, err := bb.ReadUint(endian, bitSize)
 
 	if err != nil {
 		return err
@@ -126,8 +125,8 @@ func unmarshalBool(bb *bitbuffer.BitBuffer, endian bitbuffer.Endian, bitSize int
 	return nil
 }
 
-func unmarshalUint(bb *bitbuffer.BitBuffer, endian bitbuffer.Endian, size int, value reflect.Value) error {
-	readValue, err := readUintFromBuffer(bb, endian, size)
+func unmarshalUint(bb *bitbuffer.BitBuffer, endian bitbuffer.Endian, bitSize int, value reflect.Value) error {
+	readValue, err := bb.ReadUint(endian, bitSize)
 
 	if err != nil {
 		return err
@@ -135,46 +134,6 @@ func unmarshalUint(bb *bitbuffer.BitBuffer, endian bitbuffer.Endian, size int, v
 
 	value.SetUint(readValue)
 	return nil
-}
-
-func readUintFromBuffer(bb *bitbuffer.BitBuffer, endian bitbuffer.Endian, bitSize int) (uint64, error) {
-	if bitSize < 8 {
-		data, err := bb.ReadBits(bitSize)
-		return uint64(data), err
-	} else {
-		size := (bitSize + 7) / 8
-
-		if (size * 8) != bitSize {
-			return 0, fmt.Errorf("unable to handle arbitary bit widths > 8 bits, %d requested", bitSize)
-		}
-
-		readValue := uint64(0)
-
-		switch endian {
-		case bitbuffer.BigEndian:
-			for i := 0; i < size; i++ {
-				readByte, err := bb.ReadByte()
-				if err != nil {
-					return 0, err
-				}
-
-				shiftOffset := (size - i - 1) * 8
-				readValue |= uint64(readByte) << shiftOffset
-			}
-		case bitbuffer.LittleEndian:
-			for i := 0; i < size; i++ {
-				readByte, err := bb.ReadByte()
-				if err != nil {
-					return 0, err
-				}
-
-				shiftOffset := i * 8
-				readValue |= uint64(readByte) << shiftOffset
-			}
-		}
-
-		return readValue, nil
-	}
 }
 
 func unmarshalArray(bb *bitbuffer.BitBuffer, value reflect.Value, root reflect.Value, parent reflect.Value, tags reflect.StructTag) error {
@@ -226,7 +185,7 @@ func readArraySliceLength(bb *bitbuffer.BitBuffer, tags reflect.StructTag, max i
 	}
 
 	if length.HasPrefix() {
-		readSize, err := readUintFromBuffer(bb, length.Endian, int(length.Size))
+		readSize, err := bb.ReadUint(length.Endian, int(length.Size))
 		if err != nil {
 			return 0, err
 		}
@@ -243,60 +202,19 @@ func unmarshalString(bb *bitbuffer.BitBuffer, value reflect.Value, tags reflect.
 		return err
 	}
 
-	sb := strings.Builder{}
-
 	if stringTag.Termination == Null {
-		maxLength := math.MaxInt64
-
-		if stringTag.Size != 0 {
-			maxLength = int(stringTag.Size)
-		}
-
-		i := 0
-
-		readByte := ^byte(0)
-
-		for ; i < maxLength; i++ {
-			readByte, err = bb.ReadByte()
-			if err != nil {
-				return err
-			}
-
-			if readByte == 0 {
-				i++
-				break
-			}
-
-			sb.WriteByte(readByte)
-		}
-
-		if readByte != 0 {
-			return errors.New("no null termination found in string")
-		}
-
-		for ; i < int(stringTag.Size); i++ {
-			_, err := bb.ReadByte()
-			if err != nil {
-				return err
-			}
-		}
-
-	} else {
-		stringLength, err := readUintFromBuffer(bb, stringTag.Endian, int(stringTag.Size))
-		if err != nil {
+		if str, err := bb.ReadStringNullTerminated(int(stringTag.Size)); err != nil {
 			return err
+		} else {
+			value.SetString(str)
 		}
-
-		for i := 0; i < int(stringLength); i++ {
-			readByte, err := bb.ReadByte()
-			if err != nil {
-				return err
-			}
-
-			sb.WriteByte(readByte)
+	} else {
+		if str, err := bb.ReadStringLengthPrefixed(stringTag.Endian, int(stringTag.Size)); err != nil {
+			return err
+		} else {
+			value.SetString(str)
 		}
 	}
 
-	value.SetString(sb.String())
 	return nil
 }

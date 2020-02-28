@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/shimmeringbee/bytecodec/bitbuffer"
-	"math"
 	"reflect"
 )
 
@@ -45,13 +44,13 @@ func marshalValue(bb *bitbuffer.BitBuffer, name string, value reflect.Value, roo
 	case reflect.Bool:
 		err = marshalBool(bb, fieldWidth.Width(8), value.Bool())
 	case reflect.Uint8:
-		err = marshalUint(bb, endian, fieldWidth.Width(8), value.Uint())
+		err = bb.WriteUint(value.Uint(), endian, fieldWidth.Width(8))
 	case reflect.Uint16:
-		err = marshalUint(bb, endian, fieldWidth.Width(16), value.Uint())
+		err = bb.WriteUint(value.Uint(), endian, fieldWidth.Width(16))
 	case reflect.Uint32:
-		err = marshalUint(bb, endian, fieldWidth.Width(32), value.Uint())
+		err = bb.WriteUint(value.Uint(), endian, fieldWidth.Width(32))
 	case reflect.Uint64:
-		err = marshalUint(bb, endian, fieldWidth.Width(64), value.Uint())
+		err = bb.WriteUint(value.Uint(), endian, fieldWidth.Width(64))
 	case reflect.Struct:
 		err = marshalStruct(bb, value, root)
 	case reflect.Array, reflect.Slice:
@@ -81,8 +80,6 @@ func marshalPtr(bb *bitbuffer.BitBuffer, value reflect.Value) error {
 	} else {
 		return fmt.Errorf("%w: field does not support the Marshaler interface", UnsupportedType)
 	}
-
-	return nil
 }
 
 func marshalStruct(bb *bitbuffer.BitBuffer, structValue reflect.Value, root reflect.Value) error {
@@ -109,7 +106,7 @@ func marshalArrayOrSlice(bb *bitbuffer.BitBuffer, value reflect.Value, root refl
 	}
 
 	if length.HasPrefix() {
-		if err := marshalUint(bb, length.Endian, int(length.Size), uint64(value.Len())); err != nil {
+		if err := bb.WriteUint(uint64(value.Len()), length.Endian, int(length.Size)); err != nil {
 			return err
 		}
 	}
@@ -130,44 +127,13 @@ func marshalString(bb *bitbuffer.BitBuffer, value reflect.Value, tags reflect.St
 		return err
 	}
 
-	stringBytes := []byte(value.String())
-	stringLength := len(stringBytes)
+	stringValue := value.String()
 
 	if stringTag.Termination == Null {
-		if stringTag.Size > 0 && (stringLength+1) > int(stringTag.Size) {
-			return fmt.Errorf("string too large to fit in padding allocated")
-		}
-
-		if err := bb.WriteString(value.String()); err != nil {
-			return err
-		}
-
-		if err := bb.WriteByte(0); err != nil {
-			return err
-		}
-
-		for i := 0; i < int(stringTag.Size)-(stringLength+1); i++ {
-			if err := bb.WriteByte(0); err != nil {
-				return err
-			}
-		}
+		return bb.WriteStringNullTerminated(stringValue, int(stringTag.Size))
 	} else {
-		maxSize := int(math.Pow(2, float64(stringTag.Size)))
-
-		if stringLength > maxSize {
-			return fmt.Errorf("string too large to be represented by prefixed length")
-		}
-
-		if err := marshalUint(bb, stringTag.Endian, int(stringTag.Size), uint64(stringLength)); err != nil {
-			return err
-		}
-
-		if err := bb.WriteString(value.String()); err != nil {
-			return err
-		}
+		return bb.WriteStringLengthPrefixed(stringValue, stringTag.Endian, int(stringTag.Size))
 	}
-
-	return nil
 }
 
 func marshalBool(bb *bitbuffer.BitBuffer, bitSize int, value bool) error {
@@ -178,44 +144,4 @@ func marshalBool(bb *bitbuffer.BitBuffer, bitSize int, value bool) error {
 	}
 
 	return bb.WriteBits(byte(byteValue), bitSize)
-}
-
-func marshalUint(bb *bitbuffer.BitBuffer, endian bitbuffer.Endian, bitSize int, value uint64) error {
-	maxValue := math.Pow(2, float64(bitSize)) - 1
-
-	if float64(value) > maxValue {
-		return fmt.Errorf("cannot marshal value %d into %d bit field", value, bitSize)
-	}
-
-	if bitSize < 8 {
-		if err := bb.WriteBits(byte(value), bitSize); err != nil {
-			return err
-		}
-	} else {
-		size := (bitSize + 7) / 8
-
-		if (size * 8) != bitSize {
-			return fmt.Errorf("unable to handle arbitary bit widths > 8 bits, %d requested", bitSize)
-		}
-
-		switch endian {
-		case bitbuffer.BigEndian:
-			for i := 0; i < size; i++ {
-				shiftOffset := (size - i - 1) * 8
-
-				if err := bb.WriteByte(byte(value >> shiftOffset)); err != nil {
-					return err
-				}
-			}
-		case bitbuffer.LittleEndian:
-			for i := 0; i < size; i++ {
-				shiftOffset := i * 8
-				if err := bb.WriteByte(byte(value >> shiftOffset)); err != nil {
-					return err
-				}
-			}
-		}
-	}
-
-	return nil
 }
