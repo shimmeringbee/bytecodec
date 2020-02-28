@@ -15,7 +15,7 @@ func (bb *BitBuffer) WriteStringNullTerminated(data string, paddedLength int) er
 		return errors.New("string to too long to write into padded string")
 	}
 
-	if err := bb.WriteString(data); err != nil {
+	if err := bb.writeString(data); err != nil {
 		return err
 	}
 
@@ -43,7 +43,7 @@ func (bb *BitBuffer) WriteStringLengthPrefixed(data string, endian Endian, lengt
 		return err
 	}
 
-	return bb.WriteString(data)
+	return bb.writeString(data)
 }
 
 func (bb *BitBuffer) ReadStringNullTerminated(paddedLength int) (string, error) {
@@ -109,7 +109,7 @@ func (bb *BitBuffer) ReadStringLengthPrefixed(endian Endian, length int) (string
 	return sb.String(), nil
 }
 
-func (bb *BitBuffer) WriteString(data string) error {
+func (bb *BitBuffer) writeString(data string) error {
 	dataBytes := []byte(data)
 
 	for _, b := range dataBytes {
