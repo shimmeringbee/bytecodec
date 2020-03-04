@@ -23,17 +23,15 @@ func (bb *BitBuffer) WriteInt(value int64, endian Endian, length int) error {
 
 	if endian == BigEndian {
 		for i := 0; i < bytes; i++ {
-			b := byte(value >> byte((bytes-i-1)*8))
-
-			if err := bb.WriteByte(b); err != nil {
+			shiftOffset := (bytes - i - 1) * 8
+			if err := bb.WriteByte(byte(value >> shiftOffset)); err != nil {
 				return err
 			}
 		}
 	} else {
 		for i := 0; i < bytes; i++ {
-			b := byte(value >> byte(i*8))
-
-			if err := bb.WriteByte(b); err != nil {
+			shiftOffset := i * 8
+			if err := bb.WriteByte(byte(value >> shiftOffset)); err != nil {
 				return err
 			}
 		}
@@ -47,7 +45,7 @@ func (bb *BitBuffer) ReadInt(endian Endian, length int) (int64, error) {
 		return 0, err
 	}
 
-	var v int64
+	readValue := int64(0)
 	bytes := length / 8
 
 	if endian == BigEndian {
@@ -55,7 +53,8 @@ func (bb *BitBuffer) ReadInt(endian Endian, length int) (int64, error) {
 			if b, err := bb.ReadByte(); err != nil {
 				return 0, nil
 			} else {
-				v = v | int64(int8(b))<<byte((bytes-i-1)*8)
+				shiftOffset := (bytes - i - 1) * 8
+				readValue |= int64(int8(b)) << shiftOffset
 			}
 		}
 	} else {
@@ -63,10 +62,11 @@ func (bb *BitBuffer) ReadInt(endian Endian, length int) (int64, error) {
 			if b, err := bb.ReadByte(); err != nil {
 				return 0, nil
 			} else {
-				v = v | int64(int8(b))<<byte(i*8)
+				shiftOffset := i * 8
+				readValue |= int64(int8(b)) << shiftOffset
 			}
 		}
 	}
 
-	return v, nil
+	return readValue, nil
 }

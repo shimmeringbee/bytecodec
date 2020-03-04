@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func Test_UintRead(t *testing.T) {
+func Test_ReadUint(t *testing.T) {
 	t.Run("read of 4 bits returns value", func(t *testing.T) {
 		data := []byte{0b01011111}
 		expectedValue := uint64(5)
@@ -49,7 +49,7 @@ func Test_UintRead(t *testing.T) {
 	})
 }
 
-func Test_UintWrite(t *testing.T) {
+func Test_WriteUint(t *testing.T) {
 	t.Run("write of 4 bits returns value", func(t *testing.T) {
 		bb := NewBitBuffer()
 
