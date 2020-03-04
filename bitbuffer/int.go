@@ -19,6 +19,26 @@ func (bb *BitBuffer) WriteInt(value int64, endian Endian, length int) error {
 		return err
 	}
 
+	bytes := length / 8
+
+	if endian == BigEndian {
+		for i := 0; i < bytes; i++ {
+			b := byte(value >> byte((bytes-i-1)*8))
+
+			if err := bb.WriteByte(b); err != nil {
+				return err
+			}
+		}
+	} else {
+		for i := 0; i < bytes; i++ {
+			b := byte(value >> byte(i*8))
+
+			if err := bb.WriteByte(b); err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -32,18 +52,18 @@ func (bb *BitBuffer) ReadInt(endian Endian, length int) (int64, error) {
 
 	if endian == BigEndian {
 		for i := 0; i < bytes; i++ {
-			if t, err := bb.ReadByte(); err != nil {
+			if b, err := bb.ReadByte(); err != nil {
 				return 0, nil
 			} else {
-				v = v | int64(int8(t))<<byte((bytes-i-1)*8)
+				v = v | int64(int8(b))<<byte((bytes-i-1)*8)
 			}
 		}
 	} else {
 		for i := 0; i < bytes; i++ {
-			if t, err := bb.ReadByte(); err != nil {
+			if b, err := bb.ReadByte(); err != nil {
 				return 0, nil
 			} else {
-				v = v | int64(int8(t))<<byte(i*8)
+				v = v | int64(int8(b))<<byte(i*8)
 			}
 		}
 	}
