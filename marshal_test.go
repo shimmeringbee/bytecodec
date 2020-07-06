@@ -638,13 +638,28 @@ func TestMarshal(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, expectedBytes, actualBytes)
 	})
+
+	t.Run("supports pointers which implement Marshaller interface, context contains correct index", func(t *testing.T) {
+		type StructUnderTest struct {
+			Zero uint8
+			One  *CustomFieldTwo
+		}
+
+		instance := &StructUnderTest{Zero: 0, One: &CustomFieldTwo{Value: 0}}
+		actualBytes, err := Marshal(instance)
+
+		expectedBytes := []byte{0x00, 0x03, 'O', 'N', 'E'}
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedBytes, actualBytes)
+	})
 }
 
 type CustomField struct {
 	Value uint8
 }
 
-func (f *CustomField) Marshal(bb *bitbuffer.BitBuffer) error {
+func (f *CustomField) Marshal(bb *bitbuffer.BitBuffer, ctx Context) error {
 	if f.Value == 0 {
 		return MarshalToBitBuffer(bb, "ZERO")
 	} else {
@@ -652,7 +667,7 @@ func (f *CustomField) Marshal(bb *bitbuffer.BitBuffer) error {
 	}
 }
 
-func (f *CustomField) Unmarshal(bb *bitbuffer.BitBuffer) error {
+func (f *CustomField) Unmarshal(bb *bitbuffer.BitBuffer, ctx Context) error {
 	s := ""
 	pointer := &s
 
@@ -667,6 +682,33 @@ func (f *CustomField) Unmarshal(bb *bitbuffer.BitBuffer) error {
 	} else {
 		f.Value = 1
 	}
+
+	return nil
+}
+
+type CustomFieldTwo struct {
+	Value uint8
+}
+
+func (f *CustomFieldTwo) Marshal(bb *bitbuffer.BitBuffer, ctx Context) error {
+	if ctx.CurrentIndex == 0 {
+		return MarshalToBitBuffer(bb, "ZERO")
+	} else {
+		return MarshalToBitBuffer(bb, "ONE")
+	}
+}
+
+func (f *CustomFieldTwo) Unmarshal(bb *bitbuffer.BitBuffer, ctx Context) error {
+	s := ""
+	pointer := &s
+
+	err := UnmarshalFromBitBuffer(bb, pointer)
+
+	if err != nil {
+		return err
+	}
+
+	f.Value = uint8(ctx.CurrentIndex)
 
 	return nil
 }

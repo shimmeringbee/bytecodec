@@ -522,4 +522,22 @@ func TestUnmarshall(t *testing.T) {
 		assert.NotNil(t, instance.One)
 		assert.Equal(t, uint8(1), instance.One.Value)
 	})
+
+	t.Run("supports pointers which implement Unmarshaller interface, context contains correct index", func(t *testing.T) {
+		type StructUnderTest struct {
+			Zero uint8
+			One  *CustomFieldTwo
+		}
+
+		instance := &StructUnderTest{}
+		bytes := []byte{0x00, 0x04, 'Z', 'E', 'R', 'O'}
+
+		assert.Nil(t, instance.One)
+
+		err := Unmarshal(bytes, instance)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, instance.One)
+		assert.Equal(t, uint8(1), instance.One.Value)
+	})
 }

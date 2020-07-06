@@ -1,13 +1,10 @@
 package bytecodec
 
 import (
-	"errors"
 	"fmt"
 	"github.com/shimmeringbee/bytecodec/bitbuffer"
 	"reflect"
 )
-
-var UnsupportedType = errors.New("unsupported type")
 
 func Marshal(v interface{}) ([]byte, error) {
 	bb := bitbuffer.NewBitBuffer()
@@ -22,10 +19,15 @@ func Marshal(v interface{}) ([]byte, error) {
 func MarshalToBitBuffer(bb *bitbuffer.BitBuffer, v interface{}) error {
 	val := reflect.Indirect(reflect.ValueOf(v))
 
-	return marshalValue(bb, "root", val, val, val, "")
+	ctx := Context{
+		Root:         val,
+		CurrentIndex: 0,
+	}
+
+	return marshalValue(bb, ctx, "root", val, val, val, "")
 }
 
-func marshalValue(bb *bitbuffer.BitBuffer, name string, value reflect.Value, root reflect.Value, parent reflect.Value, tags reflect.StructTag) (err error) {
+func marshalValue(bb *bitbuffer.BitBuffer, ctx Context, name string, value reflect.Value, root reflect.Value, parent reflect.Value, tags reflect.StructTag) (err error) {
 	kind := value.Kind()
 
 	endian := tagEndianness(tags)
@@ -54,11 +56,11 @@ func marshalValue(bb *bitbuffer.BitBuffer, name string, value reflect.Value, roo
 	case reflect.Struct:
 		err = marshalStruct(bb, value, root)
 	case reflect.Array, reflect.Slice:
-		err = marshalArrayOrSlice(bb, value, root, parent, tags)
+		err = marshalArrayOrSlice(bb, ctx, value, root, parent, tags)
 	case reflect.String:
 		err = marshalString(bb, value, tags)
 	case reflect.Ptr:
-		err = marshalPtr(bb, value)
+		err = marshalPtr(bb, ctx, value)
 	default:
 		err = fmt.Errorf("%w: field '%s' of type '%v'", UnsupportedType, name, kind)
 	}
@@ -66,11 +68,11 @@ func marshalValue(bb *bitbuffer.BitBuffer, name string, value reflect.Value, roo
 	return
 }
 
-func marshalPtr(bb *bitbuffer.BitBuffer, value reflect.Value) error {
+func marshalPtr(bb *bitbuffer.BitBuffer, ctx Context, value reflect.Value) error {
 	marshaler := reflect.TypeOf((*Marshaler)(nil)).Elem()
 
 	if value.Type().Implements(marshaler) {
-		retVals := value.MethodByName("Marshal").Call([]reflect.Value{reflect.ValueOf(bb)})
+		retVals := value.MethodByName("Marshal").Call([]reflect.Value{reflect.ValueOf(bb), reflect.ValueOf(ctx)})
 
 		if retVals[0].IsNil() {
 			return nil
@@ -85,13 +87,20 @@ func marshalPtr(bb *bitbuffer.BitBuffer, value reflect.Value) error {
 func marshalStruct(bb *bitbuffer.BitBuffer, structValue reflect.Value, root reflect.Value) error {
 	structType := structValue.Type()
 
+	ctx := Context{
+		Root:         structValue,
+		CurrentIndex: 0,
+	}
+
 	for i := 0; i < structValue.NumField(); i++ {
 		value := structValue.Field(i)
 		field := structType.Field(i)
 		tags := field.Tag
 		name := field.Name
 
-		if err := marshalValue(bb, name, value, root, structValue, tags); err != nil {
+		ctx.CurrentIndex = i
+
+		if err := marshalValue(bb, ctx, name, value, root, structValue, tags); err != nil {
 			return err
 		}
 	}
@@ -99,7 +108,7 @@ func marshalStruct(bb *bitbuffer.BitBuffer, structValue reflect.Value, root refl
 	return nil
 }
 
-func marshalArrayOrSlice(bb *bitbuffer.BitBuffer, value reflect.Value, root reflect.Value, parent reflect.Value, tags reflect.StructTag) error {
+func marshalArrayOrSlice(bb *bitbuffer.BitBuffer, ctx Context, value reflect.Value, root reflect.Value, parent reflect.Value, tags reflect.StructTag) error {
 	length, err := tagSlicePrefix(tags)
 	if err != nil {
 		return err
@@ -113,7 +122,7 @@ func marshalArrayOrSlice(bb *bitbuffer.BitBuffer, value reflect.Value, root refl
 
 	for i := 0; i < value.Len(); i++ {
 		name := fmt.Sprintf("array[%d]", i)
-		if err := marshalValue(bb, name, value.Index(i), root, parent, tags); err != nil {
+		if err := marshalValue(bb, ctx, name, value.Index(i), root, parent, tags); err != nil {
 			return err
 		}
 	}
