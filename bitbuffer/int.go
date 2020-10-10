@@ -54,7 +54,15 @@ func (bb *BitBuffer) ReadInt(endian Endian, length int) (int64, error) {
 				return 0, nil
 			} else {
 				shiftOffset := (bytes - i - 1) * 8
-				readValue |= int64(int8(b)) << shiftOffset
+				shifted := int64(0)
+
+				if i != 0 {
+					shifted = int64(b) << shiftOffset
+				} else {
+					shifted = int64(int8(b)) << shiftOffset
+				}
+
+				readValue |= shifted
 			}
 		}
 	} else {
@@ -63,7 +71,15 @@ func (bb *BitBuffer) ReadInt(endian Endian, length int) (int64, error) {
 				return 0, nil
 			} else {
 				shiftOffset := i * 8
-				readValue |= int64(int8(b)) << shiftOffset
+				shifted := int64(0)
+
+				if i < bytes-1 {
+					shifted = int64(b) << shiftOffset
+				} else {
+					shifted = int64(int8(b)) << shiftOffset
+				}
+
+				readValue |= shifted
 			}
 		}
 	}

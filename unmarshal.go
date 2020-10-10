@@ -97,8 +97,6 @@ func unmarshalPtr(bb *bitbuffer.BitBuffer, ctx Context, value reflect.Value) err
 	} else {
 		return fmt.Errorf("%w: field does not support the Marshaler interface", UnsupportedType)
 	}
-
-	return nil
 }
 
 func unmarshalStruct(bb *bitbuffer.BitBuffer, structValue reflect.Value, root reflect.Value) error {

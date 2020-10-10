@@ -73,6 +73,26 @@ func Test_ReadInt(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, expectedValue, actualValue)
 	})
+
+	t.Run("reading a 2 byte little endian negative integer", func(t *testing.T) {
+		bb := NewBitBufferFromBytes([]byte{0xb8, 0x09})
+
+		expectedValue := int64(2488)
+		actualValue, err := bb.ReadInt(LittleEndian, 16)
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedValue, actualValue)
+	})
+
+	t.Run("reading a 2 byte big endian negative integer", func(t *testing.T) {
+		bb := NewBitBufferFromBytes([]byte{0x09, 0xb8})
+
+		expectedValue := int64(2488)
+		actualValue, err := bb.ReadInt(BigEndian, 16)
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedValue, actualValue)
+	})
 }
 
 func Test_WriteInt(t *testing.T) {
