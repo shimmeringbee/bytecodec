@@ -163,7 +163,7 @@ func unmarshalArray(bb *bitbuffer.BitBuffer, ctx Context, value reflect.Value, r
 }
 
 func unmarshalSlice(bb *bitbuffer.BitBuffer, ctx Context, value reflect.Value, root reflect.Value, parent reflect.Value, tags reflect.StructTag) error {
-	sliceSize, err := readArraySliceLength(bb, tags, math.MaxInt64)
+	sliceSize, err := readArraySliceLength(bb, tags, math.MaxInt32)
 	if err != nil {
 		return err
 	}

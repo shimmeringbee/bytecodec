@@ -49,7 +49,7 @@ func (bb *BitBuffer) WriteStringLengthPrefixed(data string, endian Endian, lengt
 func (bb *BitBuffer) ReadStringNullTerminated(paddedLength int) (string, error) {
 	sb := strings.Builder{}
 
-	maxLength := math.MaxInt64
+	maxLength := math.MaxInt32
 
 	if paddedLength != 0 {
 		maxLength = paddedLength
