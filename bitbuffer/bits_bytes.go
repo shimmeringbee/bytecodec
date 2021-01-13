@@ -32,13 +32,13 @@ func (bb *BitBuffer) ReadBits(bitCount int) (byte, error) {
 		}
 
 		bit := bb.unhandled&0x80 == 0x80
-		bb.unhandled = bb.unhandled << 1
+		bb.unhandled <<= 1
 		bb.offset--
 
-		retVal = retVal << 1
+		retVal <<= 1
 
 		if bit {
-			retVal = retVal | 1
+			retVal |= 1
 		}
 	}
 
@@ -58,12 +58,12 @@ func (bb *BitBuffer) WriteBits(bits byte, bitCount int) error {
 
 	for i := 0; i < bitCount; i++ {
 		bit := (bits & mask) == mask
-		bits = bits << 1
+		bits <<= 1
 
-		bb.unhandled = bb.unhandled << 1
+		bb.unhandled <<= 1
 
 		if bit {
-			bb.unhandled = bb.unhandled | 0x01
+			bb.unhandled |= 0x01
 		}
 
 		bb.offset++

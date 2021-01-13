@@ -7,7 +7,7 @@ import (
 	"github.com/shimmeringbee/bytecodec/bitbuffer"
 )
 
-var UnsupportedType = errors.New("unsupported type")
+var ErrUnsupportedType = errors.New("unsupported type")
 
 type Context struct {
 	Root         reflect.Value

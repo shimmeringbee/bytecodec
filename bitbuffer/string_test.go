@@ -52,7 +52,7 @@ func Test_String(t *testing.T) {
 
 	t.Run("write length prefixed string, 4 bits", func(t *testing.T) {
 		bb := NewBitBuffer()
-		bb.WriteBits(0b1111, 4)
+		_ = bb.WriteBits(0b1111, 4)
 
 		expectedBytes := []byte{0b11110010, 'H', 'i'}
 
@@ -127,7 +127,7 @@ func Test_String(t *testing.T) {
 		bb := NewBitBufferFromBytes([]byte{0b11110010, 'H', 'i'})
 
 		expectedString := "Hi"
-		bb.ReadBits(4)
+		_, _ = bb.ReadBits(4)
 		actualString, err := bb.ReadStringLengthPrefixed(LittleEndian, 4)
 
 		assert.NoError(t, err)
@@ -157,7 +157,7 @@ func Test_String(t *testing.T) {
 	t.Run("writing a string", func(t *testing.T) {
 		bb := NewBitBuffer()
 
-		bb.writeString("Hi")
+		_ = bb.writeString("Hi")
 
 		actualBytes := bb.Bytes()
 		expectedBytes := []byte{0x48, 0x69}
@@ -168,7 +168,7 @@ func Test_String(t *testing.T) {
 	t.Run("writing a unicode string", func(t *testing.T) {
 		bb := NewBitBuffer()
 
-		bb.writeString("🤬")
+		_ = bb.writeString("🤬")
 
 		actualBytes := bb.Bytes()
 		expectedBytes := []byte{0xf0, 0x9f, 0xa4, 0xac}

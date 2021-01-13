@@ -50,37 +50,39 @@ func (bb *BitBuffer) ReadInt(endian Endian, length int) (int64, error) {
 
 	if endian == BigEndian {
 		for i := 0; i < bytes; i++ {
-			if b, err := bb.ReadByte(); err != nil {
+			b, err := bb.ReadByte()
+			if err != nil {
 				return 0, nil
-			} else {
-				shiftOffset := (bytes - i - 1) * 8
-				shifted := int64(0)
-
-				if i != 0 {
-					shifted = int64(b) << shiftOffset
-				} else {
-					shifted = int64(int8(b)) << shiftOffset
-				}
-
-				readValue |= shifted
 			}
+
+			shiftOffset := (bytes - i - 1) * 8
+			shifted := int64(0)
+
+			if i != 0 {
+				shifted = int64(b) << shiftOffset
+			} else {
+				shifted = int64(int8(b)) << shiftOffset
+			}
+
+			readValue |= shifted
 		}
 	} else {
 		for i := 0; i < bytes; i++ {
-			if b, err := bb.ReadByte(); err != nil {
+			b, err := bb.ReadByte()
+			if err != nil {
 				return 0, nil
-			} else {
-				shiftOffset := i * 8
-				shifted := int64(0)
-
-				if i < bytes-1 {
-					shifted = int64(b) << shiftOffset
-				} else {
-					shifted = int64(int8(b)) << shiftOffset
-				}
-
-				readValue |= shifted
 			}
+
+			shiftOffset := i * 8
+			shifted := int64(0)
+
+			if i < bytes-1 {
+				shifted = int64(b) << shiftOffset
+			} else {
+				shifted = int64(int8(b)) << shiftOffset
+			}
+
+			readValue |= shifted
 		}
 	}
 

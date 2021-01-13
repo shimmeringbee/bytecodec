@@ -63,7 +63,7 @@ func marshalValue(bb *bitbuffer.BitBuffer, ctx Context, name string, value refle
 	case reflect.Ptr:
 		err = marshalPtr(bb, ctx, value)
 	default:
-		err = fmt.Errorf("%w: field '%s' of type '%v'", UnsupportedType, name, kind)
+		err = fmt.Errorf("%w: field '%s' of type '%v'", ErrUnsupportedType, name, kind)
 	}
 
 	return
@@ -80,9 +80,9 @@ func marshalPtr(bb *bitbuffer.BitBuffer, ctx Context, value reflect.Value) error
 		}
 
 		return retVals[0].Interface().(error)
-	} else {
-		return fmt.Errorf("%w: field does not support the Marshaler interface", UnsupportedType)
 	}
+
+	return fmt.Errorf("%w: field does not support the Marshaler interface", ErrUnsupportedType)
 }
 
 func marshalStruct(bb *bitbuffer.BitBuffer, structValue reflect.Value, root reflect.Value) error {
@@ -141,9 +141,9 @@ func marshalString(bb *bitbuffer.BitBuffer, value reflect.Value, tags reflect.St
 
 	if stringTag.Termination == Null {
 		return bb.WriteStringNullTerminated(stringValue, int(stringTag.Size))
-	} else {
-		return bb.WriteStringLengthPrefixed(stringValue, stringTag.Endian, int(stringTag.Size))
 	}
+
+	return bb.WriteStringLengthPrefixed(stringValue, stringTag.Endian, int(stringTag.Size))
 }
 
 func marshalBool(bb *bitbuffer.BitBuffer, bitSize int, value bool) error {

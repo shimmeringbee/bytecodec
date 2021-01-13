@@ -71,7 +71,7 @@ func unmarshalValue(bb *bitbuffer.BitBuffer, ctx Context, name string, value ref
 	case reflect.String:
 		err = unmarshalString(bb, value, tags)
 	default:
-		err = fmt.Errorf("%w: field '%s' of type '%v'", UnsupportedType, name, kind)
+		err = fmt.Errorf("%w: field '%s' of type '%v'", ErrUnsupportedType, name, kind)
 	}
 
 	return
@@ -95,9 +95,9 @@ func unmarshalPtr(bb *bitbuffer.BitBuffer, ctx Context, value reflect.Value) err
 		}
 
 		return retVals[0].Interface().(error)
-	} else {
-		return fmt.Errorf("%w: field does not support the Marshaler interface", UnsupportedType)
 	}
+
+	return fmt.Errorf("%w: field does not support the Marshaler interface", ErrUnsupportedType)
 }
 
 func unmarshalStruct(bb *bitbuffer.BitBuffer, structValue reflect.Value, root reflect.Value) error {
@@ -202,9 +202,9 @@ func readArraySliceLength(bb *bitbuffer.BitBuffer, tags reflect.StructTag, max i
 		}
 
 		return int(readSize), nil
-	} else {
-		return max, nil
 	}
+
+	return max, nil
 }
 
 func unmarshalString(bb *bitbuffer.BitBuffer, value reflect.Value, tags reflect.StructTag) error {
@@ -214,17 +214,19 @@ func unmarshalString(bb *bitbuffer.BitBuffer, value reflect.Value, tags reflect.
 	}
 
 	if stringTag.Termination == Null {
-		if str, err := bb.ReadStringNullTerminated(int(stringTag.Size)); err != nil {
+		str, err := bb.ReadStringNullTerminated(int(stringTag.Size))
+		if err != nil {
 			return err
-		} else {
-			value.SetString(str)
 		}
+
+		value.SetString(str)
 	} else {
-		if str, err := bb.ReadStringLengthPrefixed(stringTag.Endian, int(stringTag.Size)); err != nil {
+		str, err := bb.ReadStringLengthPrefixed(stringTag.Endian, int(stringTag.Size))
+		if err != nil {
 			return err
-		} else {
-			value.SetString(str)
 		}
+
+		value.SetString(str)
 	}
 
 	return nil

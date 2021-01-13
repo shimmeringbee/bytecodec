@@ -18,7 +18,7 @@ func TestUnmarshall(t *testing.T) {
 		err := Unmarshal(data, instance)
 
 		assert.Error(t, err)
-		assert.True(t, errors.Is(err, UnsupportedType))
+		assert.True(t, errors.Is(err, ErrUnsupportedType))
 		assert.Equal(t, "unsupported type: field 'One' of type 'chan'", err.Error())
 	})
 
@@ -186,7 +186,7 @@ func TestUnmarshall(t *testing.T) {
 		err := Unmarshal(data, &actualStruct)
 
 		assert.Error(t, err)
-		assert.True(t, errors.Is(err, UnsupportedType))
+		assert.True(t, errors.Is(err, ErrUnsupportedType))
 		assert.Equal(t, "unsupported type: field 'Three' of type 'chan'", err.Error())
 	})
 
@@ -243,7 +243,7 @@ func TestUnmarshall(t *testing.T) {
 		err := Unmarshal(data, instance)
 
 		assert.Error(t, err)
-		assert.True(t, errors.Is(err, UnsupportedType))
+		assert.True(t, errors.Is(err, ErrUnsupportedType))
 		assert.Equal(t, "unsupported type: field 'array[0]' of type 'chan'", err.Error())
 	})
 

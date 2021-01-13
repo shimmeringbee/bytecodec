@@ -164,11 +164,12 @@ func tagIncludeIf(tag reflect.StructTag) (i IncludeIfTag, err error) {
 
 	i.FieldPath = pathParts[partStart:]
 
-	if operator == "==" || operator == "" {
+	switch operator {
+	case "==", "":
 		i.Operation = Equal
-	} else if operator == "!=" {
+	case "!=":
 		i.Operation = NotEqual
-	} else {
+	default:
 		return IncludeIfTag{}, fmt.Errorf("'%s' is not a valid includeIf operator", operator)
 	}
 
@@ -187,9 +188,9 @@ type FieldWidthTag struct {
 func (t FieldWidthTag) Width(defaultWidth int) int {
 	if t.Default {
 		return defaultWidth
-	} else {
-		return t.BitWidth
 	}
+
+	return t.BitWidth
 }
 
 func tagFieldWidth(tag reflect.StructTag) (t FieldWidthTag, err error) {

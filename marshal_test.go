@@ -19,7 +19,7 @@ func TestMarshal(t *testing.T) {
 		_, err := Marshal(instance)
 
 		assert.Error(t, err)
-		assert.True(t, errors.Is(err, UnsupportedType))
+		assert.True(t, errors.Is(err, ErrUnsupportedType))
 		assert.Equal(t, "unsupported type: field 'One' of type 'chan'", err.Error())
 	})
 
@@ -165,7 +165,7 @@ func TestMarshal(t *testing.T) {
 		_, err := Marshal(instance)
 
 		assert.Error(t, err)
-		assert.True(t, errors.Is(err, UnsupportedType))
+		assert.True(t, errors.Is(err, ErrUnsupportedType))
 		assert.Equal(t, "unsupported type: field 'Three' of type 'chan'", err.Error())
 	})
 
@@ -216,7 +216,7 @@ func TestMarshal(t *testing.T) {
 		_, err := Marshal(instance)
 
 		assert.Error(t, err)
-		assert.True(t, errors.Is(err, UnsupportedType))
+		assert.True(t, errors.Is(err, ErrUnsupportedType))
 		assert.Equal(t, "unsupported type: field 'array[0]' of type 'chan'", err.Error())
 	})
 
@@ -663,9 +663,9 @@ type CustomField struct {
 func (f *CustomField) Marshal(bb *bitbuffer.BitBuffer, ctx Context) error {
 	if f.Value == 0 {
 		return MarshalToBitBuffer(bb, "ZERO")
-	} else {
-		return MarshalToBitBuffer(bb, "ONE")
 	}
+
+	return MarshalToBitBuffer(bb, "ONE")
 }
 
 func (f *CustomField) Unmarshal(bb *bitbuffer.BitBuffer, ctx Context) error {
@@ -694,9 +694,9 @@ type CustomFieldTwo struct {
 func (f *CustomFieldTwo) Marshal(bb *bitbuffer.BitBuffer, ctx Context) error {
 	if ctx.CurrentIndex == 0 {
 		return MarshalToBitBuffer(bb, "ZERO")
-	} else {
-		return MarshalToBitBuffer(bb, "ONE")
 	}
+
+	return MarshalToBitBuffer(bb, "ONE")
 }
 
 func (f *CustomFieldTwo) Unmarshal(bb *bitbuffer.BitBuffer, ctx Context) error {

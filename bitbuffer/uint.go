@@ -9,39 +9,39 @@ func (bb *BitBuffer) ReadUint(endian Endian, length int) (uint64, error) {
 	if length < 8 {
 		data, err := bb.ReadBits(length)
 		return uint64(data), err
-	} else {
-		if length%8 != 0 {
-			return 0, fmt.Errorf("unable to handle arbitary bit widths > 8 bits, %d requested", length)
-		}
-
-		readValue := uint64(0)
-		bytes := length / 8
-
-		switch endian {
-		case BigEndian:
-			for i := 0; i < bytes; i++ {
-				readByte, err := bb.ReadByte()
-				if err != nil {
-					return 0, err
-				}
-
-				shiftOffset := (bytes - i - 1) * 8
-				readValue |= uint64(readByte) << shiftOffset
-			}
-		case LittleEndian:
-			for i := 0; i < bytes; i++ {
-				readByte, err := bb.ReadByte()
-				if err != nil {
-					return 0, err
-				}
-
-				shiftOffset := i * 8
-				readValue |= uint64(readByte) << shiftOffset
-			}
-		}
-
-		return readValue, nil
 	}
+
+	if length%8 != 0 {
+		return 0, fmt.Errorf("unable to handle arbitary bit widths > 8 bits, %d requested", length)
+	}
+
+	readValue := uint64(0)
+	bytes := length / 8
+
+	switch endian {
+	case BigEndian:
+		for i := 0; i < bytes; i++ {
+			readByte, err := bb.ReadByte()
+			if err != nil {
+				return 0, err
+			}
+
+			shiftOffset := (bytes - i - 1) * 8
+			readValue |= uint64(readByte) << shiftOffset
+		}
+	case LittleEndian:
+		for i := 0; i < bytes; i++ {
+			readByte, err := bb.ReadByte()
+			if err != nil {
+				return 0, err
+			}
+
+			shiftOffset := i * 8
+			readValue |= uint64(readByte) << shiftOffset
+		}
+	}
+
+	return readValue, nil
 }
 
 func (bb *BitBuffer) WriteUint(value uint64, endian Endian, length int) error {
