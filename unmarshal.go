@@ -3,10 +3,11 @@ package bytecodec
 import (
 	"errors"
 	"fmt"
-	"github.com/shimmeringbee/bytecodec/bitbuffer"
 	"io"
 	"math"
 	"reflect"
+
+	"github.com/shimmeringbee/bytecodec/bitbuffer"
 )
 
 func Unmarshal(data []byte, v interface{}) (err error) {

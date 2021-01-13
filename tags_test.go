@@ -1,9 +1,10 @@
 package bytecodec
 
 import (
+	"testing"
+
 	"github.com/shimmeringbee/bytecodec/bitbuffer"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestTagsEndian(t *testing.T) {

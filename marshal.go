@@ -2,8 +2,9 @@ package bytecodec
 
 import (
 	"fmt"
-	"github.com/shimmeringbee/bytecodec/bitbuffer"
 	"reflect"
+
+	"github.com/shimmeringbee/bytecodec/bitbuffer"
 )
 
 func Marshal(v interface{}) ([]byte, error) {

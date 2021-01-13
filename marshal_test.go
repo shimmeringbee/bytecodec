@@ -2,10 +2,11 @@ package bytecodec
 
 import (
 	"errors"
-	"github.com/shimmeringbee/bytecodec/bitbuffer"
-	"github.com/stretchr/testify/assert"
 	"strings"
 	"testing"
+
+	"github.com/shimmeringbee/bytecodec/bitbuffer"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestMarshal(t *testing.T) {

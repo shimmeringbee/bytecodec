@@ -1,0 +1,3 @@
+linter-settings:
+  goimports:
+    local-prefixes: github.com/shimmeringbee

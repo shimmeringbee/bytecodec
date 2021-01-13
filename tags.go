@@ -2,11 +2,12 @@ package bytecodec
 
 import (
 	"fmt"
-	"github.com/shimmeringbee/bytecodec/bitbuffer"
 	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/shimmeringbee/bytecodec/bitbuffer"
 )
 
 type StringTermination uint8

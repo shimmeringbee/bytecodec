@@ -2,8 +2,9 @@ package bytecodec
 
 import (
 	"errors"
-	"github.com/shimmeringbee/bytecodec/bitbuffer"
 	"reflect"
+
+	"github.com/shimmeringbee/bytecodec/bitbuffer"
 )
 
 var UnsupportedType = errors.New("unsupported type")
